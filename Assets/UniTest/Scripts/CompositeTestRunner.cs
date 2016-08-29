@@ -24,15 +24,16 @@ namespace UniTest
 
 		List<ITestRunner> _testers = new List<ITestRunner>();
 
-		public void Run(Action<bool> onComplete) 
+		public void Run(Action<bool> on_determined,Action on_complete) 
 		{
-			run(onComplete).ToObservable().Subscribe();
+			run(on_determined,on_complete).ToObservable().Subscribe();
 		}
 
-		IEnumerator run(Action<bool> onComplete) 
+		IEnumerator run(Action<bool> on_determined,Action on_complete) 
 		{
-			onComplete = onComplete ?? delegate(bool obj) {};
-			
+			on_determined = on_determined ?? delegate(bool obj) {};
+
+			bool isSomethingFailed = false;
 			foreach(var tester in _testers) 
 			{
 				if(tester != null) 
@@ -43,6 +44,7 @@ namespace UniTest
 					tester.Run(i_result=>
 					{
 						result = i_result;
+					},()=>{
 						isDone = true;
 					});
 
@@ -53,13 +55,18 @@ namespace UniTest
 
 					if(result == false) 
 					{
-						onComplete(false);
-						yield break;
+						on_determined(false);
+						isSomethingFailed = true;
 					}
 				}
 			}
 
-			onComplete(true);
+			if(isSomethingFailed == false)
+			{
+				on_determined(true);
+			}
+
+			on_complete();
 		}
 
 		public void Add(ITestRunner runner) 

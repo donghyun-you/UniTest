@@ -30,12 +30,14 @@ namespace UniTest
 			Tester = TestNode.Factory.Create(type,null);
 		}
 
-		public void Run(Action<bool> onComplete)
+		public void Run(Action<bool> on_determined,Action on_complete)
 		{
 			Tester.Execute(result=>
 			{
 				TestLogger.Info(this,"test done");
-				if(onComplete != null) onComplete(result);
+				if(on_determined != null) on_determined(result);
+			},()=>{
+				if(on_complete != null) on_complete();
 			});
 		}
 

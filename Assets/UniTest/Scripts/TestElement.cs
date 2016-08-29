@@ -71,7 +71,7 @@ namespace UniTest
 			InstanceID = "test_element_"+(s_instanceIdIncrement++);
 		}
 
-		public abstract void Execute(Action<bool> onFinished);
+		public abstract void Execute(Action<bool> onFinished,Action on_complete);
 		public abstract string Summarize();
 
 		public void MarkAsIgnored() 

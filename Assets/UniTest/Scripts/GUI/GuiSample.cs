@@ -32,7 +32,6 @@ namespace UniTest
 			Test22
 		}
 
-		private TestRunner _runner = null;
 		private GuiFolder _folder = null;
 		private GuiEnumDropdown<TestType> _enumDropdown = null;
 		private GuiDictionaryDropdown<int,string> _dicDropdown = null;

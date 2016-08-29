@@ -1,4 +1,5 @@
 ﻿using UniTest;
+using UnityEngine;
 using System.Collections;
 
 namespace UniTest.Sample 
@@ -15,7 +16,7 @@ namespace UniTest.Sample
 		public IEnumerator SuccessTestCoroutineScope() 
 		{
 			"This coroutine story #1".ShouldBe("success",()=>true);
-			yield return null;
+			yield return new WaitForSeconds(.1f);
 			"This coroutine story #2".ShouldBe("success",()=>true);
 		}
 

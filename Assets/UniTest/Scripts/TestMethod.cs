@@ -68,7 +68,7 @@ namespace UniTest
 			}
 		}
 
-		public override void Execute(Action<bool> on_finished = null) 
+		public override void Execute(Action<bool> on_finished = null,Action on_complete=null) 
 		{
 			// NOTE(ruel): if it was coroutine.
 			if(Invoker.ReturnType == typeof(IEnumerator)) 
@@ -79,12 +79,14 @@ namespace UniTest
 				{
 					this.TestState			= TestResultType.kPassed;
 					on_finished(true);
+					on_complete();
 				},
 				ex=>
 				{
 					this.TestState 			= TestResultType.kFailed;
 					this.FailedException 	= ex;
 					on_finished(false);
+					on_complete();
 				});
 			}
 			else
@@ -94,12 +96,14 @@ namespace UniTest
 					Invoker.Invoke(this.Instance,null);
 					this.TestState = TestResultType.kPassed;
 					on_finished(true);
+					on_complete();
 				}
 				catch(Exception ex) 
 				{
 					this.TestState = TestResultType.kFailed;
 					this.FailedException = ex;
 					on_finished(false);
+					on_complete();
 				} 
 			}
 		}

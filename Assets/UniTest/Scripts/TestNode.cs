@@ -25,6 +25,12 @@ namespace UniTest
 			private set; 
 		}
 
+		public bool IsIgnoreNextOnFailure 
+		{
+			get;
+			private set;
+		}
+
 		public override string Summarize() 
 		{
 			StringBuilder builder = new StringBuilder();
@@ -50,12 +56,13 @@ namespace UniTest
 
 				var node = new TestNode() 
 				{
-					Parent			= parent,
-					NodeType 		= node_type,
-					TestState 		= TestResultType.kNotTested,
-					Instance 		= Activator.CreateInstance(node_type),
-					Order 			= testStoryAttributes.First().Order,
-					SelfStory		= testStoryAttribute.Summary,
+					Parent					= parent,
+					NodeType 				= node_type,
+					TestState 				= TestResultType.kNotTested,
+					Instance 				= Activator.CreateInstance(node_type),
+					Order 					= testStoryAttributes.First().Order,
+					SelfStory				= testStoryAttribute.Summary,
+					IsIgnoreNextOnFailure 	= true,
 				};
 
 				if(parent == null) node.buildHierarchy();
@@ -67,8 +74,9 @@ namespace UniTest
 			{
 				return new TestNode() 
 				{
-					TestState 		= TestResultType.kNotTested,
-					SelfStory 		= self_story,
+					TestState 				= TestResultType.kNotTested,
+					SelfStory 				= self_story,
+					IsIgnoreNextOnFailure 	= false,
 				};
 			}
 		}
@@ -104,83 +112,72 @@ namespace UniTest
 			}
 		}
 
-		public override void Execute(Action<bool> on_finished = null) 
+		public override void Execute(Action<bool> on_determined = null,Action on_complete=null) 
 		{
-			execute(on_finished).ToObservable().Subscribe();
+			execute(on_determined,on_complete).ToObservable().Subscribe();
 		}
 
-		private IEnumerator execute(Action<bool> on_finished) 
+		private IEnumerator execute(Action<bool> on_determined, Action on_complete) 
 		{
-			on_finished = on_finished ?? delegate(bool is_succeeded) {
-				TestLogger.Info(this,"succeeded: "+is_succeeded);
+			bool isDetermined = false;
+			on_determined = on_determined ?? delegate(bool is_succeeded) 
+			{
+				TestLogger.Verbose(this,"succeeded: "+is_succeeded);
 			};
 
-			if(on_finished == null) 
-			{
-				throw new ArgumentNullException("onFinished");
-			}
+			on_complete = on_complete ?? delegate() {};
 
 			foreach(TestElement testCase in Children) 
 			{
-				Exception caughtEx = null;
+				TestLogger.Verbose(this,"running "+this.SelfStory+"->"+testCase.SelfStory);
 
-				if(this.TestState == TestResultType.kFailed) 
+				if(this.TestState == TestResultType.kFailed && this.IsIgnoreNextOnFailure) 
 				{
 					testCase.MarkAsIgnored();
-					if(testCase is TestMethod)
-					{
-						TestLogger.Info(this,"<color=gray>- "+testCase.Summarize()+"</color>");
-					}
+					TestLogger.Info(this,"<color=gray>- "+testCase.SelfStory+"</color>");
 				} 
 				else 
 				{
-					yield return Observable.Create<Unit>(ob=>
+					bool isErrored = false;
+					yield return Observable.Create<bool>(ob=>
 					{
 						testCase.Execute(result=> 
-						{ 
+						{
 							if(result) 
 							{
-								ob.OnNext(Unit.Default);
-								ob.OnCompleted();
-							} else {
-								ob.OnError(testCase.FailedException);
-							} 
+								TestLogger.Info(this,"<color=green>\u2714 "+testCase.SelfStory+"</color>");	
+							}
+							else 
+							{
+								TestLogger.Info(this,"<color=red>\u2716 "+testCase.SelfStory+"</color>");
+							}
+
+							if(result == false) 
+							{
+								this.TestState = TestResultType.kFailed;
+								this.FailedException = testCase.FailedException;
+								on_determined(result);
+							}
+						},()=>
+						{
+							ob.OnCompleted();
 						});
 						return Disposable.Empty;
 					})
-					.StartAsCoroutine(_=>{
-
-					},ex=>{
-						caughtEx = ex;
-					});
-
-					if(caughtEx != null) 
-					{
-						this.TestState = TestResultType.kFailed;
-						if(testCase is TestMethod)
-						{
-							TestLogger.Info(this,"<color=red>\u2716 "+testCase.Summarize()+"</color>");
-						}
-					}
-					else 
-					{
-						if(testCase is TestMethod)
-						{
-							TestLogger.Info(this,"<color=green>\u2714 "+testCase.Summarize()+"</color>");
-						}
-					}
+					.StartAsCoroutine();
 				}
 			}
+
+			TestLogger.Verbose(this,"Node("+this.SelfStory+"), complete with : "+this.TestState+"/"+this.SelfStory);
 
 			if(this.TestState == TestResultType.kNotTested) 
 			{
 				this.TestState = TestResultType.kPassed;
-				on_finished(true);
+				TestLogger.Info(this,"finishing(pass) "+this.SelfStory);
+				on_determined(true);
 			}
-			else
-			{
-				on_finished(false);
-			}
+
+			on_complete();
 		}
 
 		public void Add(TestElement element) 

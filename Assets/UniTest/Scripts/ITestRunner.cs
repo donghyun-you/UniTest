@@ -8,6 +8,6 @@ namespace UniTest
 		{
 			get; 
 		}
-		void Run(Action<bool> onComplete);
+		void Run(Action<bool> on_determined,Action on_complete);
 	}
 }

@@ -95,7 +95,9 @@ namespace UniTest
 			resetRecursively(target);
 
 			_isTesting = true;
-			target.Execute(_=>{
+			target.Execute(result=>{
+				
+			},()=>{
 				_isTesting = false;
 			});
 		}
