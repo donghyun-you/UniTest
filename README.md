@@ -8,7 +8,29 @@ Support Unity Legacy GUI for Runtime/Editor
 
 ##Usage(BDD)
 
-Under consideration and works
+```cs
+[TestStory(	1,
+				AsA		: "Tester",
+				IWant	: "The Test Story",
+				SoThat	: "Passed"
+				)]
+public class TestBdd : TestFlow
+{
+
+	[TestStory(1, IWant:"which is must be success with coroutine")]
+	public IEnumerator SuccessTestCoroutineScope() 
+	{
+			
+		int test = 0;
+		for(int i=0;i<5;i++) 
+		{
+			test++;
+			Scenario("This coroutine #"+i+" for testing test == "+(i+1)).ShouldBe("success",test == (i+1)).Done();
+			yield return new WaitForSeconds(0.05f);
+		}
+	}
+}
+```
 
 ##Usage(TDD)
 
