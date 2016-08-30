@@ -9,53 +9,59 @@ namespace UniTest.Sample
 				IWant	: "The Test Story",
 				SoThat	: "Passed"
 				)]
-	public class TestBdd
+	public class TestBdd : TestFlow
 	{
 
 		[TestStory(1, IWant:"which is must be success with coroutine")]
 		public IEnumerator SuccessTestCoroutineScope() 
 		{
-			"This coroutine story #1".ShouldBe("success",()=>true);
-			yield return new WaitForSeconds(.1f);
-			"This coroutine story #2".ShouldBe("success",()=>true);
+			
+			int test = 0;
+			for(int i=0;i<5;i++) 
+			{
+				test++;
+				Scenario("This coroutine #"+i+" for testing test == "+(i+1)).ShouldBe("success",test == (i+1)).Done();
+				yield return new WaitForSeconds(0.05f);
+			}
+
 		}
 
 		[TestStory(2, IWant:"of Example Substory")]
-		public class TestExample 
+		public class TestExample : TestFlow
 		{
 			[TestStory(1, IWant:"which is must be success")]
 			public void SuccessTestSimpleScope() 
 			{
-				"This story".ShouldBe("success",()=>true);
+				Scenario("This story").ShouldBe("success",()=>true).Done();
 			}
 
 			[TestStory(2, IWant:"which is must be failure")]
 			public void FailureTestSimpleScope() 
 			{
-				"This story".ShouldBe("failure",()=>false);
+				Scenario("This story").ShouldBe("failure",()=>false).Done();
 			}
 
 			[TestStory(3, IWant:"which is must be ignored")]
 			public void IgnoredScenarioOfThird() 
 			{
-				"This story".ShouldBe("failure",()=>false);
+				Scenario("This story").ShouldBe("failure",()=>false).Done();
 			}
 		}
 
 		[TestStory(3, IWant: "which is must be failure with coroutine")]
 		public IEnumerator FailureTestCoroutineScope1() 
 		{
-			"This coroutine story #3".ShouldBe("success",()=>true);
+			Scenario("This coroutine story #3").ShouldBe("success",()=>true).Done();
 			yield return null;
-			"This coroutine story #4".ShouldBe("failure",()=>false);
+			Scenario("This coroutine story #4").ShouldBe("failure",()=>false).Done();
 		}
 
 		[TestStory(4, IWant: "which is must be ignored")]
 		public IEnumerator FailureTestCoroutineScope2() 
 		{
-			"This coroutine story #5".ShouldBe("failure",()=>false);
+			Scenario("This coroutine story #5").ShouldBe("failure",()=>false).Done();
 			yield return null;
-			"This coroutine story #6".ShouldBe("failure",()=>false);
+			Scenario("This coroutine story #6").ShouldBe("failure",()=>false).Done();
 		}
 	}
 }

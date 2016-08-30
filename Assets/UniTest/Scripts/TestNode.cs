@@ -31,6 +31,18 @@ namespace UniTest
 			private set;
 		}
 
+		/// <summary>
+		/// Reports from children. dic key=method name, list value = reports various
+		/// </summary>
+		/// <value>The tested method reports.</value>
+		public Dictionary<string,List<string>> TestedMethodReports 
+		{
+			get;
+			private set;
+		}
+
+		private IDisposable _disposable = null;
+
 		public override string Summarize() 
 		{
 			StringBuilder builder = new StringBuilder();
@@ -45,7 +57,7 @@ namespace UniTest
 		{
 			public static TestNode Create(Type node_type, TestNode parent) 
 			{
-				var testStoryAttributes = node_type.GetCustomAttributes(typeof(TestStoryAttribute),false).Select(entry => entry as TestStoryAttribute);
+				var testStoryAttributes = node_type.GetCustomAttributes(typeof(TestCaseAttribute),false).Select(entry => entry as TestCaseAttribute);
 
 				if(!testStoryAttributes.Any()) 
 				{
@@ -63,7 +75,35 @@ namespace UniTest
 					Order 					= testStoryAttributes.First().Order,
 					SelfStory				= testStoryAttribute.Summary,
 					IsIgnoreNextOnFailure 	= true,
+					TestedMethodReports		= new Dictionary<string, List<string>>(),
 				};
+
+				if(node.Instance is TestFlow) 
+				{
+					var testFlow			= node.Instance as TestFlow;
+
+					TestFlow.TestedScenarioEvent onTestSucceed = delegate(TestFlow flow, string flow_method, string summary) 
+					{
+						if(object.ReferenceEquals(flow,node.Instance)) 
+						{
+							List<string> reports;
+							if(node.TestedMethodReports.TryGetValue(flow_method,out reports) == false) 
+							{
+								reports = node.TestedMethodReports[flow_method] = new List<string>();
+							} 
+
+							reports.Add(summary);
+						}
+					};
+
+					testFlow.OnTestSucceed += onTestSucceed;
+
+					node._disposable		= Disposable.Create(()=>{
+
+						testFlow.OnTestSucceed -= onTestSucceed;
+
+					});
+				}
 
 				if(parent == null) node.buildHierarchy();
 
@@ -86,15 +126,15 @@ namespace UniTest
 			// NOTE(ruel): nestedClasses which is contains TestStoryNodeAttribute
 			var nestedClasses 	= NodeType	// Reterieve all nested classes of this class
 											.GetNestedTypes()
-											// filter all nested classes that contains TestStoryNodeAttribute 
-											.Where(type=>type.GetCustomAttributes(typeof(TestStoryAttribute),false).Any())
+											// filter all nested classes that contains TestCaseAttribute 
+											.Where(type=>type.GetCustomAttributes(typeof(TestCaseAttribute),false).Any())
 											// create BddNode for normalize interface
 											.Select(type=>Factory.Create(type,this) as TestElement);
 											
 			var testMethods		= NodeType	// Reterieve all methods of this class
 											.GetMethods(BindingFlags.Instance | BindingFlags.Public)
-											// filter all methods that contains TestStoryFixtureAttribute
-											.Where(method=>method.GetCustomAttributes(typeof(TestStoryAttribute),false).Any())
+											// filter all methods that contains TestCaseAttribute
+											.Where(method=>method.GetCustomAttributes(typeof(TestCaseAttribute),false).Any())
 											// create TestElement for create interface to control
 											.Select(method=>TestMethod.Factory.Create(this,method.Name) as TestElement);
 			
@@ -119,7 +159,6 @@ namespace UniTest
 
 		private IEnumerator execute(Action<bool> on_determined, Action on_complete) 
 		{
-			bool isDetermined = false;
 			on_determined = on_determined ?? delegate(bool is_succeeded) 
 			{
 				TestLogger.Verbose(this,"succeeded: "+is_succeeded);
@@ -138,7 +177,6 @@ namespace UniTest
 				} 
 				else 
 				{
-					bool isErrored = false;
 					yield return Observable.Create<bool>(ob=>
 					{
 						testCase.Execute(result=> 
@@ -207,6 +245,16 @@ namespace UniTest
 				{
 					this.Children = this.Children.Concat(elements).ToArray();
 				}
+			}
+		}
+
+		public override void Reset ()
+		{
+			base.Reset ();
+
+			if(this.TestedMethodReports != null) 
+			{
+				this.TestedMethodReports.Clear();
 			}
 		}
 	}

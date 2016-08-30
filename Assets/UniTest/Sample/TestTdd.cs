@@ -3,20 +3,31 @@ using System.Collections;
 
 namespace UniTest.Sample 
 {
-	[TestStory(	1,
-		AsA		: "Tester",
-		IWant	: "The TDD Test",
-		SoThat	: "Passed"
-	)]
-	public class TestTdd
+	[TestScenario(2,Summary:"Tdd example")]
+	public class TestTdd : TestFlow
 	{
-		[TestStory(1, IWant:"which is must be success with coroutine")]
+		[TestScenario(1, Summary:"test with coroutine for success test")]
 		public IEnumerator SuccessTestCoroutineScope() 
 		{
-			"This coroutine story #1".ShouldBe("success",()=>true);
-			yield return null;
-			"This coroutine story #2".ShouldBe("success",()=>true);
+			int test = 1;
+			Assert("test == 1",test == 1);
+
+			for(int i=0;i<5;i++) 
+			{
+				test++;
+				Assert("test == "+(i+2),test == (i+2));
+				yield return new WaitForSeconds(0.05f);
+			}
 		}
 
+		[TestScenario(2, Summary:"test with coroutine for failure test")]
+		public IEnumerator FailureTestCoroutineScope() 
+		{
+			int test = 1;
+			Assert("test == 1",test == 1);
+			yield return new WaitForSeconds(0.5f);
+			test++;
+			Assert("test == 1 (it would be failure)",test == 1);
+		}
 	}
 }

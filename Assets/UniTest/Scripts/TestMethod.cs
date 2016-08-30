@@ -40,7 +40,7 @@ namespace UniTest
 				var method_names 	= node_type.GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(method=>method.Name == method_name);
 				var invoker 		= method_names.First();
 
-				var testStoryAttributes = invoker.GetCustomAttributes(typeof(TestStoryAttribute),false).Select(entry => entry as TestStoryAttribute);
+				var testStoryAttributes = invoker.GetCustomAttributes(typeof(TestCaseAttribute),false).Select(entry => entry as TestCaseAttribute);
 
 				if(!testStoryAttributes.Any()) 
 				{
@@ -58,6 +58,7 @@ namespace UniTest
 						Instance 	= instance,
 						Order 		= testStoryAttribute.Order,
 						SelfStory	= testStoryAttribute.Summary,
+						Name		= method_name,
 					};
 				}
 				else 

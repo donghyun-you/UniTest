@@ -5,14 +5,8 @@ using System.Collections;
 namespace UniTest 
 {
 	public class TestStoryAttribute 
-		: Attribute 
+		: TestCaseAttribute 
 	{
-		public int Order 
-		{ 
-			get; 
-			private set; 
-		}
-
 		public string AsA 
 		{
 			get;
@@ -31,7 +25,7 @@ namespace UniTest
 			private set;
 		}
 
-		public string Summary 
+		public override string Summary 
 		{
 			get 
 			{
@@ -70,9 +64,8 @@ namespace UniTest
 			}
 		}
 
-		public TestStoryAttribute(int Order,string AsA=null,string IWant=null,string SoThat=null) 
+		public TestStoryAttribute(int Order,string AsA=null,string IWant=null,string SoThat=null) : base(Order)
 		{
-			this.Order 		= Order;
 			this.AsA 		= AsA;
 			this.IWant		= IWant;
 			this.SoThat		= SoThat;

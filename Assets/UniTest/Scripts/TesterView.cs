@@ -41,11 +41,11 @@ namespace UniTest
 				{
 					test(element);	
 				}
-				drawState(element);
 			}
 
-			GUILayout.BeginVertical();
+			drawState(element);
 
+			GUILayout.BeginVertical();
 
 			if(element is TestNode) 
 			{
@@ -69,6 +69,21 @@ namespace UniTest
 				GUILayout.BeginHorizontal();
 				GUILayout.Label(element.SelfStory);
 				GUILayout.EndHorizontal();
+
+				if(element.Parent != null) 
+				{
+					List<string> reports;
+					if(element.Parent.TestedMethodReports.TryGetValue(element.Name,out reports)) 
+					{
+						Color colorBefore = GUI.color;
+						GUI.color = Color.cyan;
+						foreach(var report in reports) 
+						{
+							GUILayout.Label(report);
+						}		
+						GUI.color = colorBefore;
+					}
+				}
 
 				if(element.TestState == TestResultType.kFailed) 
 				{

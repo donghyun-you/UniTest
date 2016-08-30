@@ -43,6 +43,12 @@ namespace UniTest
 			protected set;
 		}
 
+		public string Name 
+		{
+			get;
+			protected set;
+		}
+
 		public virtual string Story 
 		{
 			get 
@@ -79,7 +85,7 @@ namespace UniTest
 			this.TestState = TestResultType.kIgnored;
 		}
 
-		public void Reset() 
+		public virtual void Reset() 
 		{
 			this.TestState = TestResultType.kNotTested;
 		}

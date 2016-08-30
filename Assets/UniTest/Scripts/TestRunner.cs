@@ -43,7 +43,7 @@ namespace UniTest
 
 		public static IEnumerable<Type> GetRootStories() 
 		{
-			return Assembly.GetExecutingAssembly().GetTypes().Where(type=>type.IsNested == false && type.GetCustomAttributes(typeof(TestStoryAttribute),true).Any());
+			return Assembly.GetExecutingAssembly().GetTypes().Where(type=>type.IsNested == false && type.GetCustomAttributes(typeof(TestCaseAttribute),true).Any());
 		}
 	}
 }
