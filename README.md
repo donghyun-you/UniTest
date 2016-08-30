@@ -6,7 +6,12 @@ Coroutine support for asynchronous test.
 
 Support Unity Legacy GUI for Runtime/Editor
 
+##Executing
+
+![sample](images/sample.png?raw=true "running sample(runtime)")
+
 ##Usage(BDD)
+implement a class like this
 
 ```cs
 [TestStory(	1,AsA: "Tester",IWant: "The Test Story", SoThat: "Passed")]
@@ -29,7 +34,7 @@ public class TestBdd : TestFlow
 
 ##Usage(TDD)
 
-implement the class like this.
+implement a class like this.
 
 ```cs
 [TestScenario(2,Summary:"Tdd example")]
