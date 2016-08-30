@@ -9,18 +9,13 @@ Support Unity Legacy GUI for Runtime/Editor
 ##Usage(BDD)
 
 ```cs
-[TestStory(	1,
-				AsA		: "Tester",
-				IWant	: "The Test Story",
-				SoThat	: "Passed"
-				)]
+[TestStory(	1,AsA : "Tester",IWant: "The Test Story", SoThat: "Passed")]
 public class TestBdd : TestFlow
 {
 
 	[TestStory(1, IWant:"which is must be success with coroutine")]
 	public IEnumerator SuccessTestCoroutineScope() 
 	{
-			
 		int test = 0;
 		for(int i=0;i<5;i++) 
 		{
