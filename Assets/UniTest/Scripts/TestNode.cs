@@ -31,14 +31,39 @@ namespace UniTest
 			private set;
 		}
 
+		public class Report 
+		{
+			public enum Category 
+			{
+				kResult,
+				kComment,
+				kWarning,
+				kCritical,
+			}
+
+			public Category category;
+			public string 	message;
+		}
+
 		/// <summary>
 		/// Reports from children. dic key=method name, list value = reports various
 		/// </summary>
 		/// <value>The tested method reports.</value>
-		public Dictionary<string,List<string>> TestedMethodReports 
+		public Dictionary<string,List<Report>> TestedMethodReports 
 		{
 			get;
 			private set;
+		}
+
+		public void AddReport(string method, Report.Category category, string message) 
+		{
+			List<Report> reports;
+			if(this.TestedMethodReports.TryGetValue(method,out reports) == false) 
+			{
+				reports = TestedMethodReports[method] = new List<Report>();
+			} 
+
+			reports.Add(new Report { category = category, message = message });
 		}
 
 		private IDisposable _disposable = null;
@@ -75,32 +100,44 @@ namespace UniTest
 					Order 					= testStoryAttributes.First().Order,
 					SelfStory				= testStoryAttribute.Summary,
 					IsIgnoreNextOnFailure 	= true,
-					TestedMethodReports		= new Dictionary<string, List<string>>(),
+					TestedMethodReports		= new Dictionary<string, List<Report>>(),
 				};
 
 				if(node.Instance is TestFlow) 
 				{
 					var testFlow			= node.Instance as TestFlow;
 
-					TestFlow.TestedScenarioEvent onTestSucceed = delegate(TestFlow flow, string flow_method, string summary) 
+					TestFlow.TestedScenarioEvent onTestSucceed = delegate(TestFlow flow, string flow_method, string message) 
 					{
-						if(object.ReferenceEquals(flow,node.Instance)) 
-						{
-							List<string> reports;
-							if(node.TestedMethodReports.TryGetValue(flow_method,out reports) == false) 
-							{
-								reports = node.TestedMethodReports[flow_method] = new List<string>();
-							} 
-
-							reports.Add(summary);
-						}
+						if(object.ReferenceEquals(flow,node.Instance)) node.AddReport(flow_method,Report.Category.kResult,message);
 					};
 
-					testFlow.OnTestSucceed += onTestSucceed;
+					TestFlow.TestedScenarioEvent onTestComment = delegate(TestFlow flow, string flow_method, string message) 
+					{
+						if(object.ReferenceEquals(flow,node.Instance)) node.AddReport(flow_method,Report.Category.kComment,message);
+					};
+
+					TestFlow.TestedScenarioEvent onTestCritical = delegate(TestFlow flow, string flow_method, string message) 
+					{
+						if(object.ReferenceEquals(flow,node.Instance)) node.AddReport(flow_method,Report.Category.kCritical,message);
+					};
+
+					TestFlow.TestedScenarioEvent onTestWarning = delegate(TestFlow flow, string flow_method, string message) 
+					{
+						if(object.ReferenceEquals(flow,node.Instance)) node.AddReport(flow_method,Report.Category.kWarning,message);
+					};
+
+					testFlow.OnTestSucceed  += onTestSucceed;
+					testFlow.OnTestComment  += onTestComment;
+					testFlow.OnTestCritical += onTestCritical;
+					testFlow.OnTestWarning  += onTestWarning;
 
 					node._disposable		= Disposable.Create(()=>{
 
-						testFlow.OnTestSucceed -= onTestSucceed;
+						testFlow.OnTestSucceed  -= onTestSucceed;
+						testFlow.OnTestComment  -= onTestComment;
+						testFlow.OnTestCritical -= onTestCritical;
+						testFlow.OnTestWarning  -= onTestWarning;
 
 					});
 				}

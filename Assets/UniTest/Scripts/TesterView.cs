@@ -72,14 +72,28 @@ namespace UniTest
 
 				if(element.Parent != null) 
 				{
-					List<string> reports;
+					List<TestNode.Report> reports;
 					if(element.Parent.TestedMethodReports.TryGetValue(element.Name,out reports)) 
 					{
 						Color colorBefore = GUI.color;
-						GUI.color = Color.cyan;
 						foreach(var report in reports) 
 						{
-							GUILayout.Label(report);
+							switch(report.category) 
+							{
+								case TestNode.Report.Category.kWarning:
+								GUI.color = Color.yellow;
+								break;
+								case TestNode.Report.Category.kComment:
+								GUI.color = Color.white;
+								break;
+								case TestNode.Report.Category.kCritical:
+								GUI.color = Color.red;
+								break;
+								case TestNode.Report.Category.kResult:
+								GUI.color = Color.cyan;
+								break;
+							}
+							GUILayout.Label(report.message);
 						}		
 						GUI.color = colorBefore;
 					}

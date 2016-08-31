@@ -8,4 +8,9 @@ public class ScenarioFailureException
 	{
 		
 	}
+
+	public ScenarioFailureException(string message,Exception innerException) : base(message,innerException) 
+	{
+
+	}
 }
