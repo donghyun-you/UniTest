@@ -80,17 +80,14 @@ namespace UniTest
 						{
 							switch(report.category) 
 							{
-								case TestNode.Report.Category.kWarning:
+								case TestReportType.kWarning:
 								GUI.color = Color.yellow;
 								break;
-								case TestNode.Report.Category.kComment:
-								GUI.color = Color.white;
-								break;
-								case TestNode.Report.Category.kCritical:
-								GUI.color = Color.red;
-								break;
-								case TestNode.Report.Category.kResult:
+								case TestReportType.kPass:
 								GUI.color = Color.cyan;
+								break;
+								case TestReportType.kComment:
+								GUI.color = Color.white;
 								break;
 							}
 							GUILayout.Label(report.message);

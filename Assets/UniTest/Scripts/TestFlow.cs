@@ -1,57 +1,88 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace UniTest 
 {
 	public class TestFlow
 	{
-		public delegate void TestedScenarioEvent(TestFlow flow, string flow_method, string summary);
-		public event TestedScenarioEvent OnTestSucceed = delegate(TestFlow flow, string flow_method, string summary) {};
-		public event TestedScenarioEvent OnTestCritical = delegate(TestFlow flow, string flow_method, string summary) {};
-		public event TestedScenarioEvent OnTestComment = delegate(TestFlow flow, string flow_method, string summary) {};
-		public event TestedScenarioEvent OnTestWarning = delegate(TestFlow flow, string flow_method, string summary) {};
+		public delegate void TestedScenarioEvent(TestFlow flow, string flow_method, TestReportType report_type, string summary);
+		public event TestedScenarioEvent OnTestSucceed = delegate(TestFlow flow, string flow_method, TestReportType report_type, string summary) {};
 
-		public string message = "";
+		private string message = "";
+
+		public TestReportType ReportType 
+		{
+			get;
+			private set;
+		}
 
 		public TestFlow Parent 
 		{
-			get; private set;
+			get; 
+			private set;
 		}
 
 		public string ParentMethod 
 		{
-			get; private set;
+			get; 
+			private set;
 		}
 
 		public object Subject
 		{
-			get; private set;
+			get; 
+			private set;
 		}
 
 		private bool _negation = true;
 
 		#region subject
 
-		public TestFlow Scenario(string message,object subject) 
+		public TestFlow CommentIf(string message,object subject) 
 		{
-			return new TestFlow(this,getMethodName(),message,subject);
+			return new TestFlow(this,getMethodName(),message,TestReportType.kComment,subject);
 		}
 
-		public TestFlow About(object subject) 
+		public TestFlow CommentAbout(object subject) 
 		{
-			return new TestFlow(this,getMethodName(),subject == null ? "?" : subject.ToString(),subject);
+			return new TestFlow(this,getMethodName(),toStringOrNull(subject),TestReportType.kComment,subject);
+		}
+
+		public TestFlow WarnIf(string message,object subject) 
+		{
+			return new TestFlow(this,getMethodName(),message,TestReportType.kWarning,subject);
+		}
+
+		public TestFlow WarnAbout(object subject) 
+		{
+			return new TestFlow(this,getMethodName(),toStringOrNull(subject),TestReportType.kWarning,subject);
+		}
+
+		public TestFlow AssertIf(string message,object subject) 
+		{
+			return new TestFlow(this,getMethodName(),message,TestReportType.kPass,subject);
+		}
+
+		public TestFlow AssertAbout(object subject) 
+		{
+			return new TestFlow(this,getMethodName(),toStringOrNull(subject),TestReportType.kPass,subject);
 		}
 
 		protected TestFlow() 
 		{
 		}
 
-		protected TestFlow(TestFlow parent,string parent_method,string message,object subject) 
+		protected TestFlow(TestFlow parent,string parent_method,string message,TestReportType report_type,object subject) 
 		{
 			this.Parent 		= parent;
 			this.ParentMethod 	= parent_method;
 			this.message 		= message;
+			this.ReportType		= report_type;
 			this.Subject 		= subject;
 		}
 
@@ -59,136 +90,576 @@ namespace UniTest
 
 		#region conclusion assertion
 
-		public TestFlow Type(Type type) 
+		public TestFlow TypeOf(Type type) 
 		{
-			message += " type";
-			if((Subject.GetType() == type) != _negation) 
+			message += " type of "+type.Name;
+
+			try 
 			{
-				throw new Exception(message.Trim());
-			} 
-			return Done();
+				if((Subject.GetType() == type) != _negation) 
+				{
+					throw new ScenarioFailureException(message.Trim());
+				} 
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+
+				return conclude(ex);
+
+			}
+		}
+
+		public TestFlow TypeOf<T>() 
+		{
+			message += " type of "+typeof(T).Name;
+
+			try 
+			{
+				if((Subject is T) != _negation) 
+				{
+					throw new ScenarioFailureException(message.Trim());
+				} 
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+
+				return conclude(ex);
+
+			}
 		}
 
 		public TestFlow Thrown() 
 		{
-			message += " exception";
-			if((Subject != null && Subject is Exception) != _negation) 
+			message += " thrown";
+
+			try 
 			{
-				if(Subject is Exception) 
+				if((Subject != null && Subject is Exception) != _negation) 
 				{
-					throw new ScenarioFailureException(message.Trim(),Subject as Exception);
+					if(Subject is Exception) 
+					{
+						throw new ScenarioFailureException(message.Trim(),Subject as Exception);
+					} 
+					else 
+					{
+						throw new ScenarioFailureException(message.Trim());
+					}
 				} 
-				else 
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
 				{
-					throw new ScenarioFailureException(message.Trim());
+					throw ex;
 				}
-			} 
-			return Done();
+
+				return conclude(ex);
+
+			}
 		}
 
 		public TestFlow EqualTo(IComparable target) 
 		{
-			message += " equal to "+target.ToString();
-			if((Subject is IComparable && (Subject as IComparable).CompareTo(target) == 0) != _negation) 
+			message += " equal to "+toStringOrNull(target);
+
+			if(Subject is IComparable == false) 
 			{
-				throw new ScenarioFailureException(message.Trim());
-			} 
-			return Done();
+				throw new InvalidOperationException("[EqualTo] must chained for IComparable");	
+			}
+
+			try 
+			{
+				if(((Subject as IComparable).CompareTo(target) == 0) != _negation) 
+				{
+					throw new ScenarioFailureException(message.Trim());
+				} 
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+
+				return conclude(ex);
+
+			}
+		}
+
+		public TestFlow GreaterThan(IComparable target) 
+		{
+			message += " greater than "+toStringOrNull(target);
+
+			if(Subject is IComparable == false) 
+			{
+				throw new InvalidOperationException("[GreaterThan] must chained for IComparable");	
+			}
+
+			try 
+			{
+				if(((Subject as IComparable).CompareTo(target) > 0) != _negation) 
+				{
+					throw new ScenarioFailureException(message.Trim());
+				} 
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+
+				return conclude(ex);
+
+			}
+		}
+
+		public TestFlow GreaterThanOrEqualTo(IComparable target) 
+		{
+			message += " greater than or equal to "+toStringOrNull(target);
+
+			if(Subject is IComparable == false) 
+			{
+				throw new InvalidOperationException("[GreaterThanOrEqualTo] must chained for IComparable");	
+			}
+
+			try 
+			{
+				if(((Subject as IComparable).CompareTo(target) >= 0) != _negation) 
+				{
+					throw new ScenarioFailureException(message.Trim());
+				} 
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+
+				return conclude(ex);
+
+			}
+		}
+
+		public TestFlow LesserThan(IComparable target) 
+		{
+			message += " lesser than "+toStringOrNull(target);
+
+			if(Subject is IComparable == false) 
+			{
+				throw new InvalidOperationException("[LesserThan] must chained for IComparable");	
+			}
+
+			try 
+			{
+				if(((Subject as IComparable).CompareTo(target) < 0) != _negation) 
+				{
+					throw new ScenarioFailureException(message.Trim());
+				} 
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+
+				return conclude(ex);
+
+			}
+		}
+
+		public TestFlow LesserThanOrEqualTo(IComparable target) 
+		{
+			message += " lesser than or equal to "+toStringOrNull(target);
+
+			if(Subject is IComparable == false) 
+			{
+				throw new InvalidOperationException("[LesserThanOrEqualTo] must chained for IComparable");	
+			}
+
+			try 
+			{
+				if(((Subject as IComparable).CompareTo(target) <= 0) != _negation) 
+				{
+					throw new ScenarioFailureException(message.Trim());
+				} 
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+
+				return conclude(ex);
+			}
 		}
 
 		public TestFlow OK() 
 		{
 			message += " OK";
-			if((Subject is bool && Convert.ToBoolean(Subject)) != _negation) 
+
+			if(Subject is bool == false) 
 			{
-				throw new ScenarioFailureException(message.Trim());
+				throw new InvalidOperationException("[OK] must chained for boolean");	
 			}
-			return Done();
+
+			try 
+			{
+				if((Subject is bool && Convert.ToBoolean(Subject)) != _negation) 
+				{
+					throw new ScenarioFailureException(message.Trim());
+				}
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+
+				return conclude(ex);
+			}
 		}
 
 		public TestFlow Null() 
 		{
 			message += " null";
-			if((Subject == null) != _negation)
+
+			try 
 			{
-				throw new ScenarioFailureException(message.Trim());
+				if((Subject == null) != _negation)
+				{
+					throw new ScenarioFailureException(message.Trim());
+				}
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+
+				return conclude(ex);
 			}
-			return Done();
+		}
+
+		#region conclude with string
+		public TestFlow String() 
+		{
+			message += " string";
+
+			try 
+			{
+				if((Subject is string) != _negation)
+				{
+					throw new ScenarioFailureException(message.Trim());
+				}
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+
+				return conclude(ex);
+			}
+		}
+
+		public TestFlow StartsWith(string value) 
+		{
+			if(value == null) 
+			{
+				throw new ArgumentNullException("value");
+			}
+
+			message += " starts with "+value;
+
+			if(Subject != null && (Subject is string == false))
+			{
+				throw new InvalidOperationException("[StartsWith] must chained for string");	
+			}
+
+			try 
+			{
+				if((((string)Subject).StartsWith(value)) != _negation)
+				{
+					throw new ScenarioFailureException(message.Trim());
+				}
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+
+				return conclude(ex);
+			}
+		}
+
+		public TestFlow EndsWith(string value) 
+		{
+			if(value == null) 
+			{
+				throw new ArgumentNullException("value");
+			}
+
+			message += " ends with "+value;
+
+			if(Subject != null && (Subject is string == false))
+			{
+				throw new InvalidOperationException("[EndsWith] must chained for string");	
+			}
+
+			try 
+			{
+				if((((string)Subject).EndsWith(value)) != _negation)
+				{
+					throw new ScenarioFailureException(message.Trim());
+				}
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+				else 
+				{
+					return conclude(ex);
+				}
+			}
+		}
+
+		public TestFlow MatchesWith(string pattern) 
+		{
+			if(pattern == null) 
+			{
+				throw new ArgumentNullException("pattern");
+			}
+
+			message += " matches with "+pattern;
+
+			if(Subject != null && (Subject is string == false)) 
+			{
+				throw new InvalidOperationException("[MatchesWith] must chained for string");	
+			}
+
+			try 
+			{
+				if((Regex.IsMatch(((string)Subject),pattern)) != _negation)
+				{
+					throw new ScenarioFailureException(message.Trim());
+				}
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+				else 
+				{
+					return conclude(ex);
+				}
+			}
+		}
+
+		#endregion
+
+		public TestFlow Numeric() 
+		{
+			message += " numeric";
+			try 
+			{
+				if((Subject is int || Subject is uint || Subject is long || Subject is ulong || Subject is float || Subject is double || Subject is decimal || Subject is short || Subject is ushort) != _negation)
+				{
+					throw new ScenarioFailureException(message.Trim());
+				}
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+
+				return conclude(ex);
+			}
+		}
+
+		public TestFlow ValueType() 
+		{
+			message += " value-type";
+			try 
+			{
+				if((Subject is ValueType) != _negation)
+				{
+					throw new ScenarioFailureException(message.Trim());
+				}
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+
+				return conclude(ex);
+			}
+		}
+
+		public TestFlow Contains(object target) 
+		{
+			message += " contains "+ toStringOrNull(target);
+
+			if(Subject is IList == false) 
+			{
+				throw new InvalidOperationException("[Contains] must chained for IList");	
+			}
+
+			try 
+			{
+				if(((Subject as IList).Contains(target)) != _negation)
+				{
+					throw new ScenarioFailureException(message.Trim());
+				}
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+				else 
+				{
+					return conclude(ex);
+				}
+			}
 		}
 
 		public TestFlow True() 
 		{
 			message += " true";
-			if((Subject is bool && Convert.ToBoolean(Subject) == true) != _negation)
+				
+			if(Subject is bool == false) 
 			{
-				throw new ScenarioFailureException(message.Trim());
+				throw new InvalidOperationException("[True] must chained for bool");	
 			}
-			return Done();
+
+			try 
+			{	
+				if((Convert.ToBoolean(Subject) == true) != _negation)
+				{
+					throw new ScenarioFailureException(message.Trim());
+				}
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+				else 
+				{
+					return conclude(ex);
+				}
+			}
 		}
 
 		public TestFlow False() 
 		{
 			message += " false";
-			if((Subject is bool && Convert.ToBoolean(Subject) == false) != _negation)
+
+			if(Subject is bool == false) 
 			{
-				throw new ScenarioFailureException(message.Trim());
+				throw new InvalidOperationException("[False] must chained for bool");	
 			}
-			return Done();
+
+			try 
+			{
+				if((Subject is bool && Convert.ToBoolean(Subject) == false) != _negation)
+				{
+					throw new ScenarioFailureException(message.Trim());
+				}
+
+				return conclude(null);
+
+			} catch(Exception ex) {
+
+				if(this.ReportType == TestReportType.kPass) 
+				{
+					throw ex;
+				}
+				else 
+				{
+					return conclude(ex);
+				}
+			}
 		}
 
-		public TestFlow Done()
+		private TestFlow conclude(Exception ex)
 		{
-			OnTestSucceed.Invoke(this,null,this.message);
+
+			string addMore = ex == null ? "" : ".\n<i><color=red>but errored: "+ex.ToString()+"</color></i>";
+
+			OnTestSucceed.Invoke(this,null,this.ReportType,this.message.Trim()+addMore);
 
 			if(Parent != null) 
 			{
-				Parent.OnTestSucceed(this.Parent,this.ParentMethod,this.message);
+				Parent.OnTestSucceed(this.Parent,this.ParentMethod,this.ReportType,this.message.Trim()+addMore);
 			}
 
-			return this;
-		}
-
-		public TestFlow Comment(string comment=null) 
-		{
-			if(string.IsNullOrEmpty(comment)) 
-			{
-				OnTestComment.Invoke(this,null,comment);
-
-				if(Parent != null) 
-				{
-					Parent.OnTestComment(this.Parent,this.ParentMethod,comment);
-				}	
-			}
-
-			return this;
-		}
-
-		public TestFlow Warn(string message=null) 
-		{
-			if(string.IsNullOrEmpty(message)) 
-			{
-				OnTestComment.Invoke(this,null,message);
-
-				if(Parent != null) 
-				{
-					Parent.OnTestWarning(this.Parent,this.ParentMethod,message);
-				}	
-			}
-
-			return this;
-		}
-
-		public TestFlow Critical(string message=null) 
-		{
-			if(string.IsNullOrEmpty(message)) 
-			{
-				OnTestComment.Invoke(this,null,message);
-
-				if(Parent != null) 
-				{
-					Parent.OnTestCritical(this.Parent,this.ParentMethod,message);
-				}	
-			}
+			// NOTE(ruel): unset after report. consider concluded. and continued something.
+			this.message = "...";
 
 			return this;
 		}
@@ -238,7 +709,7 @@ namespace UniTest
 			}
 			else 
 			{
-				OnTestSucceed.Invoke(this,getMethodName(),message);
+				OnTestSucceed.Invoke(this,getMethodName(),TestReportType.kPass,message);
 			}
 		}
 
@@ -255,11 +726,13 @@ namespace UniTest
 			} 
 			else 
 			{
-				OnTestSucceed.Invoke(this,getMethodName(),message);
+				OnTestSucceed.Invoke(this,getMethodName(),TestReportType.kPass,message);
 			}
 		}
 
 		#endregion
+
+		#region utils
 
 		private string getAssertedFilename() 
 		{
@@ -280,5 +753,18 @@ namespace UniTest
 
 			return methodName;
 		}
+
+		private string toStringOrNull(object target) 
+		{
+			if(target is string) 
+			{
+				return string.Format("\"{0}\"",target);
+			}
+			else 
+			{
+				return target == null ? "(null)" : target.ToString();
+			}
+		}
+		#endregion
 	}
 }

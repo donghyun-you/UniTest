@@ -33,16 +33,8 @@ namespace UniTest
 
 		public class Report 
 		{
-			public enum Category 
-			{
-				kResult,
-				kComment,
-				kWarning,
-				kCritical,
-			}
-
-			public Category category;
-			public string 	message;
+			public TestReportType 	category;
+			public string 			message;
 		}
 
 		/// <summary>
@@ -55,7 +47,7 @@ namespace UniTest
 			private set;
 		}
 
-		public void AddReport(string method, Report.Category category, string message) 
+		public void AddReport(string method, TestReportType category, string message) 
 		{
 			List<Report> reports;
 			if(this.TestedMethodReports.TryGetValue(method,out reports) == false) 
@@ -107,38 +99,17 @@ namespace UniTest
 				{
 					var testFlow			= node.Instance as TestFlow;
 
-					TestFlow.TestedScenarioEvent onTestSucceed = delegate(TestFlow flow, string flow_method, string message) 
+					TestFlow.TestedScenarioEvent onTestSucceed = delegate(TestFlow flow, string flow_method, TestReportType report_type, string message) 
 					{
-						if(object.ReferenceEquals(flow,node.Instance)) node.AddReport(flow_method,Report.Category.kResult,message);
-					};
-
-					TestFlow.TestedScenarioEvent onTestComment = delegate(TestFlow flow, string flow_method, string message) 
-					{
-						if(object.ReferenceEquals(flow,node.Instance)) node.AddReport(flow_method,Report.Category.kComment,message);
-					};
-
-					TestFlow.TestedScenarioEvent onTestCritical = delegate(TestFlow flow, string flow_method, string message) 
-					{
-						if(object.ReferenceEquals(flow,node.Instance)) node.AddReport(flow_method,Report.Category.kCritical,message);
-					};
-
-					TestFlow.TestedScenarioEvent onTestWarning = delegate(TestFlow flow, string flow_method, string message) 
-					{
-						if(object.ReferenceEquals(flow,node.Instance)) node.AddReport(flow_method,Report.Category.kWarning,message);
+						if(object.ReferenceEquals(flow,node.Instance)) node.AddReport(flow_method,report_type,message);
 					};
 
 					testFlow.OnTestSucceed  += onTestSucceed;
-					testFlow.OnTestComment  += onTestComment;
-					testFlow.OnTestCritical += onTestCritical;
-					testFlow.OnTestWarning  += onTestWarning;
 
 					node._disposable		= Disposable.Create(()=>{
 
 						testFlow.OnTestSucceed  -= onTestSucceed;
-						testFlow.OnTestComment  -= onTestComment;
-						testFlow.OnTestCritical -= onTestCritical;
-						testFlow.OnTestWarning  -= onTestWarning;
-
+					
 					});
 				}
 
