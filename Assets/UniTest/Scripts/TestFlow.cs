@@ -10,8 +10,8 @@ namespace UniTest
 {
 	public class TestFlow
 	{
-		public delegate void TestedScenarioEvent(TestFlow flow, string flow_method, TestReportType report_type, string summary);
-		public event TestedScenarioEvent OnTestSucceed = delegate(TestFlow flow, string flow_method, TestReportType report_type, string summary) {};
+		public delegate void TestedScenarioEvent(TestFlow flow, string flow_method, TestReport report);
+		public event TestedScenarioEvent OnTestSucceed = delegate(TestFlow flow, string flow_method, TestReport report) {};
 
 		private string message = "";
 
@@ -90,7 +90,7 @@ namespace UniTest
 
 		#region conclusion assertion
 
-		public TestFlow TypeOf(Type type) 
+		public TestFlow TypeOf(Type type,string conclusion=null) 
 		{
 			message += " type of "+type.Name;
 
@@ -101,7 +101,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				} 
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -110,12 +110,12 @@ namespace UniTest
 					throw ex;
 				}
 
-				return conclude(ex);
+				return conclude(conclusion,ex);
 
 			}
 		}
 
-		public TestFlow TypeOf<T>() 
+		public TestFlow TypeOf<T>(string conclusion=null) 
 		{
 			message += " type of "+typeof(T).Name;
 
@@ -126,7 +126,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				} 
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -135,12 +135,12 @@ namespace UniTest
 					throw ex;
 				}
 
-				return conclude(ex);
+				return conclude(conclusion,ex);
 
 			}
 		}
 
-		public TestFlow Thrown() 
+		public TestFlow Thrown(string conclusion=null) 
 		{
 			message += " thrown";
 
@@ -158,7 +158,7 @@ namespace UniTest
 					}
 				} 
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -167,12 +167,12 @@ namespace UniTest
 					throw ex;
 				}
 
-				return conclude(ex);
+				return conclude(conclusion,ex);
 
 			}
 		}
 
-		public TestFlow EqualTo(IComparable target) 
+		public TestFlow EqualTo(IComparable target,string conclusion=null) 
 		{
 			message += " equal to "+toStringOrNull(target);
 
@@ -188,7 +188,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				} 
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -197,12 +197,12 @@ namespace UniTest
 					throw ex;
 				}
 
-				return conclude(ex);
+				return conclude(conclusion,ex);
 
 			}
 		}
 
-		public TestFlow GreaterThan(IComparable target) 
+		public TestFlow GreaterThan(IComparable target,string conclusion=null) 
 		{
 			message += " greater than "+toStringOrNull(target);
 
@@ -218,7 +218,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				} 
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -227,12 +227,12 @@ namespace UniTest
 					throw ex;
 				}
 
-				return conclude(ex);
+				return conclude(conclusion,ex);
 
 			}
 		}
 
-		public TestFlow GreaterThanOrEqualTo(IComparable target) 
+		public TestFlow GreaterThanOrEqualTo(IComparable target,string conclusion=null) 
 		{
 			message += " greater than or equal to "+toStringOrNull(target);
 
@@ -248,7 +248,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				} 
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -257,12 +257,12 @@ namespace UniTest
 					throw ex;
 				}
 
-				return conclude(ex);
+				return conclude(conclusion,ex);
 
 			}
 		}
 
-		public TestFlow LesserThan(IComparable target) 
+		public TestFlow LesserThan(IComparable target,string conclusion=null) 
 		{
 			message += " lesser than "+toStringOrNull(target);
 
@@ -278,7 +278,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				} 
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -287,12 +287,12 @@ namespace UniTest
 					throw ex;
 				}
 
-				return conclude(ex);
+				return conclude(conclusion,ex);
 
 			}
 		}
 
-		public TestFlow LesserThanOrEqualTo(IComparable target) 
+		public TestFlow LesserThanOrEqualTo(IComparable target,string conclusion=null) 
 		{
 			message += " lesser than or equal to "+toStringOrNull(target);
 
@@ -308,7 +308,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				} 
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -317,11 +317,11 @@ namespace UniTest
 					throw ex;
 				}
 
-				return conclude(ex);
+				return conclude(conclusion,ex);
 			}
 		}
 
-		public TestFlow OK() 
+		public TestFlow OK(string conclusion=null) 
 		{
 			message += " OK";
 
@@ -337,7 +337,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				}
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -346,11 +346,11 @@ namespace UniTest
 					throw ex;
 				}
 
-				return conclude(ex);
+				return conclude(conclusion,ex);
 			}
 		}
 
-		public TestFlow Null() 
+		public TestFlow Null(string conclusion=null) 
 		{
 			message += " null";
 
@@ -361,7 +361,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				}
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -370,12 +370,12 @@ namespace UniTest
 					throw ex;
 				}
 
-				return conclude(ex);
+				return conclude(conclusion,ex);
 			}
 		}
 
 		#region conclude with string
-		public TestFlow String() 
+		public TestFlow String(string conclusion=null) 
 		{
 			message += " string";
 
@@ -386,7 +386,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				}
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -395,11 +395,11 @@ namespace UniTest
 					throw ex;
 				}
 
-				return conclude(ex);
+				return conclude(conclusion,ex);
 			}
 		}
 
-		public TestFlow StartsWith(string value) 
+		public TestFlow StartsWith(string value,string conclusion=null) 
 		{
 			if(value == null) 
 			{
@@ -420,7 +420,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				}
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -429,11 +429,11 @@ namespace UniTest
 					throw ex;
 				}
 
-				return conclude(ex);
+				return conclude(conclusion,ex);
 			}
 		}
 
-		public TestFlow EndsWith(string value) 
+		public TestFlow EndsWith(string value,string conclusion=null) 
 		{
 			if(value == null) 
 			{
@@ -454,7 +454,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				}
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -464,12 +464,12 @@ namespace UniTest
 				}
 				else 
 				{
-					return conclude(ex);
+					return conclude(conclusion,ex);
 				}
 			}
 		}
 
-		public TestFlow MatchesWith(string pattern) 
+		public TestFlow MatchesWith(string pattern,string conclusion=null) 
 		{
 			if(pattern == null) 
 			{
@@ -490,7 +490,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				}
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -500,14 +500,14 @@ namespace UniTest
 				}
 				else 
 				{
-					return conclude(ex);
+					return conclude(conclusion,ex);
 				}
 			}
 		}
 
 		#endregion
 
-		public TestFlow Numeric() 
+		public TestFlow Numeric(string conclusion=null) 
 		{
 			message += " numeric";
 			try 
@@ -517,7 +517,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				}
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -526,11 +526,11 @@ namespace UniTest
 					throw ex;
 				}
 
-				return conclude(ex);
+				return conclude(conclusion,ex);
 			}
 		}
 
-		public TestFlow ValueType() 
+		public TestFlow ValueType(string conclusion=null) 
 		{
 			message += " value-type";
 			try 
@@ -540,7 +540,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				}
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -549,11 +549,11 @@ namespace UniTest
 					throw ex;
 				}
 
-				return conclude(ex);
+				return conclude(conclusion,ex);
 			}
 		}
 
-		public TestFlow Contains(object target) 
+		public TestFlow Contains(object target,string conclusion=null) 
 		{
 			message += " contains "+ toStringOrNull(target);
 
@@ -569,7 +569,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				}
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -579,12 +579,12 @@ namespace UniTest
 				}
 				else 
 				{
-					return conclude(ex);
+					return conclude(conclusion,ex);
 				}
 			}
 		}
 
-		public TestFlow True() 
+		public TestFlow True(string conclusion=null) 
 		{
 			message += " true";
 				
@@ -600,7 +600,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				}
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -610,12 +610,12 @@ namespace UniTest
 				}
 				else 
 				{
-					return conclude(ex);
+					return conclude(conclusion,ex);
 				}
 			}
 		}
 
-		public TestFlow False() 
+		public TestFlow False(string conclusion=null) 
 		{
 			message += " false";
 
@@ -631,7 +631,7 @@ namespace UniTest
 					throw new ScenarioFailureException(message.Trim());
 				}
 
-				return conclude(null);
+				return conclude(conclusion,null);
 
 			} catch(Exception ex) {
 
@@ -641,21 +641,20 @@ namespace UniTest
 				}
 				else 
 				{
-					return conclude(ex);
+					return conclude(conclusion,ex);
 				}
 			}
 		}
 
-		private TestFlow conclude(Exception ex)
+		private TestFlow conclude(string add_message,Exception ex)
 		{
+			var reportResult = TestReport.Factory.Create(this.ReportType,(this.message+" "+(add_message ?? "")).Trim(),ex);
 
-			string addMore = ex == null ? "" : ".\n<i><color=red>but errored: "+ex.ToString()+"</color></i>";
-
-			OnTestSucceed.Invoke(this,null,this.ReportType,this.message.Trim()+addMore);
+			OnTestSucceed.Invoke(this,null,reportResult);
 
 			if(Parent != null) 
 			{
-				Parent.OnTestSucceed(this.Parent,this.ParentMethod,this.ReportType,this.message.Trim()+addMore);
+				Parent.OnTestSucceed(this.Parent,this.ParentMethod,reportResult);
 			}
 
 			// NOTE(ruel): unset after report. consider concluded. and continued something.
@@ -709,7 +708,7 @@ namespace UniTest
 			}
 			else 
 			{
-				OnTestSucceed.Invoke(this,getMethodName(),TestReportType.kPass,message);
+				OnTestSucceed.Invoke(this,getMethodName(),TestReport.Factory.Create(TestReportType.kPass,message));
 			}
 		}
 
@@ -726,7 +725,7 @@ namespace UniTest
 			} 
 			else 
 			{
-				OnTestSucceed.Invoke(this,getMethodName(),TestReportType.kPass,message);
+				OnTestSucceed.Invoke(this,getMethodName(),TestReport.Factory.Create(TestReportType.kPass,message));
 			}
 		}
 

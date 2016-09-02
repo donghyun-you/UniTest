@@ -31,34 +31,36 @@ namespace UniTest
 			private set;
 		}
 
-		public class Report 
-		{
-			public TestReportType 	category;
-			public string 			message;
-		}
-
 		/// <summary>
 		/// Reports from children. dic key=method name, list value = reports various
 		/// </summary>
 		/// <value>The tested method reports.</value>
-		public Dictionary<string,List<Report>> TestedMethodReports 
+		public Dictionary<string,List<TestReport>> TestedMethodReports 
 		{
 			get;
 			private set;
 		}
 
-		public void AddReport(string method, TestReportType category, string message) 
+		public void AddReport(string method, TestReport result) 
 		{
-			List<Report> reports;
+			List<TestReport> reports;
 			if(this.TestedMethodReports.TryGetValue(method,out reports) == false) 
 			{
-				reports = TestedMethodReports[method] = new List<Report>();
+				reports = TestedMethodReports[method] = new List<TestReport>();
 			} 
 
-			reports.Add(new Report { category = category, message = message });
+			reports.Add(result);
 		}
 
 		private IDisposable _disposable = null;
+
+		protected override void onDisposed ()
+		{
+			if(_disposable != null) 
+			{
+				_disposable.Dispose();
+			}
+		}
 
 		public override string Summarize() 
 		{
@@ -92,16 +94,16 @@ namespace UniTest
 					Order 					= testStoryAttributes.First().Order,
 					SelfStory				= testStoryAttribute.Summary,
 					IsIgnoreNextOnFailure 	= true,
-					TestedMethodReports		= new Dictionary<string, List<Report>>(),
+					TestedMethodReports		= new Dictionary<string, List<TestReport>>(),
 				};
 
 				if(node.Instance is TestFlow) 
 				{
 					var testFlow			= node.Instance as TestFlow;
 
-					TestFlow.TestedScenarioEvent onTestSucceed = delegate(TestFlow flow, string flow_method, TestReportType report_type, string message) 
+					TestFlow.TestedScenarioEvent onTestSucceed = delegate(TestFlow flow, string flow_method, TestReport report) 
 					{
-						if(object.ReferenceEquals(flow,node.Instance)) node.AddReport(flow_method,report_type,message);
+						if(object.ReferenceEquals(flow,node.Instance)) node.AddReport(flow_method,report);
 					};
 
 					testFlow.OnTestSucceed  += onTestSucceed;

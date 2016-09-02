@@ -15,6 +15,11 @@ namespace UniTest
 			private set;
 		}
 
+		protected override void onDisposed ()
+		{
+			// nothing to dispose
+		}
+
 		public override string Summarize() 
 		{
 			return "["+this.Instance.GetType().Name+"::"+this.Invoker.Name+"] "+this.Story+" ("+TestState+")";

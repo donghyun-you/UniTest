@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace UniTest 
 {
@@ -72,25 +73,61 @@ namespace UniTest
 
 				if(element.Parent != null) 
 				{
-					List<TestNode.Report> reports;
+					List<TestReport> reports;
 					if(element.Parent.TestedMethodReports.TryGetValue(element.Name,out reports)) 
 					{
 						Color colorBefore = GUI.color;
-						foreach(var report in reports) 
+						for(int iReport=0,dReport=reports.Count;iReport<dReport;iReport++)
 						{
-							switch(report.category) 
+							var report = reports[iReport];
+
+							GUILayout.BeginHorizontal();
+							switch(report.type) 
 							{
 								case TestReportType.kWarning:
 								GUI.color = Color.yellow;
+								GUILayout.Label("[Warn]",GUILayout.Width(50f));
 								break;
 								case TestReportType.kPass:
 								GUI.color = Color.cyan;
+								GUILayout.Label("[Pass]",GUILayout.Width(50f));
 								break;
 								case TestReportType.kComment:
 								GUI.color = Color.white;
+								GUILayout.Label("[Note]",GUILayout.Width(50f));
 								break;
 							}
+
+							GUILayout.BeginVertical();
+
 							GUILayout.Label(report.message);
+
+							if(report.attachments != null && report.attachments.Where(entry=>entry != null).Any()) 
+							{
+								GUILayout.Label("attachments /");
+
+								for(int iAttachment=0,dAttachment=report.attachments.Length;iAttachment<dAttachment;iAttachment++) 
+								{
+									var attachment = report.attachments[iAttachment];
+									if(attachment != null) 
+									{
+										GUILayout.BeginHorizontal();
+										GUILayout.Space(10f);
+										GUILayout.BeginVertical();
+										if(_folder.Fold(string.Format("{0}-{1}-{2}",element.InstanceID,iReport,iAttachment),attachment.GetType().Name)) 
+										{
+											GUILayout.Label(attachment.ToString(),GUI.skin.textArea);
+										}
+										GUILayout.EndVertical();
+
+										GUILayout.EndHorizontal();	
+									}
+								}
+							}
+
+							GUILayout.EndVertical();
+
+							GUILayout.EndHorizontal();
 						}		
 						GUI.color = colorBefore;
 					}

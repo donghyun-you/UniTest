@@ -6,6 +6,7 @@ using System.Linq;
 namespace UniTest 
 {
 	public abstract class TestElement
+		: Bases.DisposableBase
 	{
 		public TestNode Parent
 		{
