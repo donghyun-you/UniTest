@@ -48,16 +48,16 @@ namespace UniTest
 
 			if(this.IsFold(key)) 
 			{
-				GUI.color = Color.grey;
-				if(GUILayout.Button("▶︎ "+show,Style)) 
+				GUI.color = Color.white;
+				if(GUILayout.Button("▼ "+show,Style)) 
 				{
 					this.UnsetFold(key);
 				}
 			}
 			else 
 			{
-				GUI.color = Color.white;
-				if(GUILayout.Button("▼ "+show,Style)) 
+				GUI.color = Color.grey;
+				if(GUILayout.Button("▶︎ "+show,Style)) 
 				{
 					this.SetFold(key);
 				}
