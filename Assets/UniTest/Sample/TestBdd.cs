@@ -80,7 +80,7 @@ namespace UniTest.Sample
 			}
 		}
 
-		[TestStory(3, IWant: "which is must be failure with coroutine")]
+		[TestStory(3, IWant: "which is must be ignored with coroutine")]
 		public IEnumerator FailureTestCoroutineScope1() 
 		{
 			AssertIf("This coroutine story #3",true).Should.Be.True();

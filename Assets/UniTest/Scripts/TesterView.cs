@@ -86,15 +86,15 @@ namespace UniTest
 							{
 								case TestReportType.kWarning:
 								GUI.color = Color.yellow;
-								GUILayout.Label("[Warn]",GUILayout.Width(50f));
+								GUILayout.Label("[Warned]",GUILayout.Width(100f));
 								break;
 								case TestReportType.kPass:
 								GUI.color = Color.cyan;
-								GUILayout.Label("[Pass]",GUILayout.Width(50f));
+								GUILayout.Label("[Passed]",GUILayout.Width(100f));
 								break;
 								case TestReportType.kComment:
 								GUI.color = Color.white;
-								GUILayout.Label("[Note]",GUILayout.Width(50f));
+								GUILayout.Label("[Commented]",GUILayout.Width(100f));
 								break;
 							}
 
@@ -137,7 +137,7 @@ namespace UniTest
 				{
 					if(element.FailedException != null) 
 					{
-						if(_folder.Fold(element.InstanceID+"_ex","Error details")) 
+						if(_folder.Fold(element.InstanceID+"_ex","[Failed] Error details")) 
 						{
 							GUILayout.Label(element.FailedException.ToString(),GUI.skin.textArea);
 						}
