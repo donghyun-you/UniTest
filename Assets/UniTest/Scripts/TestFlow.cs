@@ -156,7 +156,7 @@ namespace UniTest
 					{
 						throw new ScenarioFailureException(message.Trim());
 					}
-				} 
+				}
 
 				return conclude(conclusion,null);
 
@@ -176,13 +176,13 @@ namespace UniTest
 		{
 			message += " equal to "+toStringOrNull(target);
 
-			if(Subject is IComparable == false) 
-			{
-				throw new InvalidOperationException("[EqualTo] must chained for IComparable");	
-			}
-
 			try 
 			{
+				if(Subject is IComparable == false) 
+				{
+					throw new InvalidOperationException("[EqualTo] must chained with IComparable");	
+				}
+
 				if(((Subject as IComparable).CompareTo(target) == 0) != _negation) 
 				{
 					throw new ScenarioFailureException(message.Trim());
@@ -206,13 +206,13 @@ namespace UniTest
 		{
 			message += " greater than "+toStringOrNull(target);
 
-			if(Subject is IComparable == false) 
-			{
-				throw new InvalidOperationException("[GreaterThan] must chained for IComparable");	
-			}
-
 			try 
 			{
+				if(Subject is IComparable == false) 
+				{
+					throw new InvalidOperationException("[GreaterThan] must chained with IComparable");	
+				}
+
 				if(((Subject as IComparable).CompareTo(target) > 0) != _negation) 
 				{
 					throw new ScenarioFailureException(message.Trim());
@@ -236,13 +236,13 @@ namespace UniTest
 		{
 			message += " greater than or equal to "+toStringOrNull(target);
 
-			if(Subject is IComparable == false) 
-			{
-				throw new InvalidOperationException("[GreaterThanOrEqualTo] must chained for IComparable");	
-			}
-
 			try 
 			{
+				if(Subject is IComparable == false) 
+				{
+					throw new InvalidOperationException("[GreaterThanOrEqualTo] must chained with IComparable");	
+				}
+
 				if(((Subject as IComparable).CompareTo(target) >= 0) != _negation) 
 				{
 					throw new ScenarioFailureException(message.Trim());
@@ -266,13 +266,13 @@ namespace UniTest
 		{
 			message += " lesser than "+toStringOrNull(target);
 
-			if(Subject is IComparable == false) 
-			{
-				throw new InvalidOperationException("[LesserThan] must chained for IComparable");	
-			}
-
 			try 
 			{
+				if(Subject is IComparable == false) 
+				{
+					throw new InvalidOperationException("[LesserThan] must chained with IComparable");	
+				}
+
 				if(((Subject as IComparable).CompareTo(target) < 0) != _negation) 
 				{
 					throw new ScenarioFailureException(message.Trim());
@@ -296,13 +296,13 @@ namespace UniTest
 		{
 			message += " lesser than or equal to "+toStringOrNull(target);
 
-			if(Subject is IComparable == false) 
-			{
-				throw new InvalidOperationException("[LesserThanOrEqualTo] must chained for IComparable");	
-			}
-
 			try 
 			{
+				if(Subject is IComparable == false) 
+				{
+					throw new InvalidOperationException("[LesserThanOrEqualTo] must chained with IComparable");	
+				}
+
 				if(((Subject as IComparable).CompareTo(target) <= 0) != _negation) 
 				{
 					throw new ScenarioFailureException(message.Trim());
@@ -325,13 +325,13 @@ namespace UniTest
 		{
 			message += " OK";
 
-			if(Subject is bool == false) 
-			{
-				throw new InvalidOperationException("[OK] must chained for boolean");	
-			}
-
 			try 
 			{
+				if(Subject is bool == false) 
+				{
+					throw new InvalidOperationException("[OK] must chained with boolean");	
+				}
+
 				if((Subject is bool && Convert.ToBoolean(Subject)) != _negation) 
 				{
 					throw new ScenarioFailureException(message.Trim());
@@ -408,13 +408,18 @@ namespace UniTest
 
 			message += " starts with "+value;
 
-			if(Subject != null && (Subject is string == false))
-			{
-				throw new InvalidOperationException("[StartsWith] must chained for string");	
-			}
-
 			try 
 			{
+				if(Subject == null) 
+				{
+					throw new ArgumentNullException("Subject");	
+				}
+
+				if(Subject is string == false)
+				{
+					throw new InvalidOperationException("[StartsWith] must chained with string");	
+				}
+
 				if((((string)Subject).StartsWith(value)) != _negation)
 				{
 					throw new ScenarioFailureException(message.Trim());
@@ -442,13 +447,18 @@ namespace UniTest
 
 			message += " ends with "+value;
 
-			if(Subject != null && (Subject is string == false))
-			{
-				throw new InvalidOperationException("[EndsWith] must chained for string");	
-			}
-
 			try 
 			{
+				if(Subject == null) 
+				{
+					throw new ArgumentNullException("Subject");	
+				}
+
+				if(Subject is string == false)
+				{
+					throw new InvalidOperationException("[EndsWith] must chained with string");	
+				}
+
 				if((((string)Subject).EndsWith(value)) != _negation)
 				{
 					throw new ScenarioFailureException(message.Trim());
@@ -478,13 +488,18 @@ namespace UniTest
 
 			message += " matches with "+pattern;
 
-			if(Subject != null && (Subject is string == false)) 
-			{
-				throw new InvalidOperationException("[MatchesWith] must chained for string");	
-			}
-
 			try 
 			{
+				if(Subject == null) 
+				{
+					throw new ArgumentNullException("Subject");	
+				}
+
+				if(Subject is string == false)
+				{
+					throw new InvalidOperationException("[MatchesWith] must chained with string");	
+				}
+
 				if((Regex.IsMatch(((string)Subject),pattern)) != _negation)
 				{
 					throw new ScenarioFailureException(message.Trim());
@@ -557,13 +572,13 @@ namespace UniTest
 		{
 			message += " contains "+ toStringOrNull(target);
 
-			if(Subject is IList == false) 
-			{
-				throw new InvalidOperationException("[Contains] must chained for IList");	
-			}
-
 			try 
 			{
+				if(Subject is IList == false) 
+				{
+					throw new InvalidOperationException("[Contains] must chained with IList");	
+				}
+
 				if(((Subject as IList).Contains(target)) != _negation)
 				{
 					throw new ScenarioFailureException(message.Trim());
@@ -588,13 +603,13 @@ namespace UniTest
 		{
 			message += " true";
 				
-			if(Subject is bool == false) 
-			{
-				throw new InvalidOperationException("[True] must chained for bool");	
-			}
-
 			try 
 			{	
+				if(Subject is bool == false) 
+				{
+					throw new InvalidOperationException("[True] must chained with bool");	
+				}
+
 				if((Convert.ToBoolean(Subject) == true) != _negation)
 				{
 					throw new ScenarioFailureException(message.Trim());
@@ -619,13 +634,13 @@ namespace UniTest
 		{
 			message += " false";
 
-			if(Subject is bool == false) 
-			{
-				throw new InvalidOperationException("[False] must chained for bool");	
-			}
-
 			try 
 			{
+				if(Subject is bool == false) 
+				{
+					throw new InvalidOperationException("[False] must chained with bool");	
+				}
+
 				if((Subject is bool && Convert.ToBoolean(Subject) == false) != _negation)
 				{
 					throw new ScenarioFailureException(message.Trim());

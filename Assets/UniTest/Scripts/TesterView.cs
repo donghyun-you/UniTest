@@ -22,7 +22,7 @@ namespace UniTest
 		{
 			GUILayout.Label("Test Hierarchy");
 
-			if(GUILayout.Button("Reset")) 
+			if(GUILayout.Button("Reset Tests",GUILayout.Height(50f))) 
 			{
 				resetRecursively(_runner.Tester);
 			}
