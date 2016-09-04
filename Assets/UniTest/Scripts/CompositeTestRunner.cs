@@ -2,7 +2,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UniRx;
 using System.Linq;
 
 namespace UniTest 
@@ -26,7 +25,7 @@ namespace UniTest
 
 		public void Run(Action<bool> on_determined,Action on_complete) 
 		{
-			run(on_determined,on_complete).ToObservable().Subscribe();
+			run(on_determined,on_complete).Run();
 		}
 
 		IEnumerator run(Action<bool> on_determined,Action on_complete) 

@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UniRx;
 using System.Text;
 using UnityEngine;
 
@@ -108,7 +107,7 @@ namespace UniTest
 
 					testFlow.OnTestSucceed  += onTestSucceed;
 
-					node._disposable		= Disposable.Create(()=>{
+					node._disposable		= DisposableCreator.Create(()=>{
 
 						testFlow.OnTestSucceed  -= onTestSucceed;
 					
@@ -164,7 +163,7 @@ namespace UniTest
 
 		public override void Execute(Action<bool> on_determined = null,Action on_complete=null) 
 		{
-			execute(on_determined,on_complete).ToObservable().Subscribe();
+			execute(on_determined,on_complete).Run();
 		}
 
 		private IEnumerator execute(Action<bool> on_determined, Action on_complete) 
@@ -187,32 +186,34 @@ namespace UniTest
 				} 
 				else 
 				{
-					yield return Observable.Create<bool>(ob=>
+					bool isComplete = false;
+					testCase.Execute(result=> 
 					{
-						testCase.Execute(result=> 
+						if(result) 
 						{
-							if(result) 
-							{
-								TestLogger.Info(this,"<color=green>\u2714 "+testCase.SelfStory+"</color>");	
-							}
-							else 
-							{
-								TestLogger.Info(this,"<color=red>\u2716 "+testCase.SelfStory+"</color>");
-							}
+							TestLogger.Info(this,"<color=green>\u2714 "+testCase.SelfStory+"</color>");	
+						}
+						else 
+						{
+							TestLogger.Info(this,"<color=red>\u2716 "+testCase.SelfStory+"</color>");
+						}
 
-							if(result == false) 
-							{
-								this.TestState = TestResultType.kFailed;
-								this.FailedException = testCase.FailedException;
-								on_determined(result);
-							}
-						},()=>
+						if(result == false) 
 						{
-							ob.OnCompleted();
-						});
-						return Disposable.Empty;
-					})
-					.StartAsCoroutine();
+							this.TestState = TestResultType.kFailed;
+							this.FailedException = testCase.FailedException;
+							on_determined(result);
+						}
+					},()=>
+					{
+						isComplete = true;
+					});
+
+					// NOTE(ruel): wait for testCase runner complete
+					while(isComplete == false) 
+					{	
+						yield return null;
+					}
 				}
 			}
 

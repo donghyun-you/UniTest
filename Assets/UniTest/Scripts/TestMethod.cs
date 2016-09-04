@@ -2,7 +2,6 @@
 using System.Reflection;
 using System.Collections;
 using System.Linq;
-using UniRx;
 
 namespace UniTest 
 {
@@ -81,7 +80,7 @@ namespace UniTest
 			{
 				IEnumerator enumerator = (IEnumerator)Invoker.Invoke(this.Instance,null);
 
-				enumerator.ToObservable().Subscribe(_=>
+				enumerator.Run(()=>
 				{
 					this.TestState			= TestResultType.kPassed;
 					on_finished(true);
@@ -92,7 +91,7 @@ namespace UniTest
 					this.TestState 			= TestResultType.kFailed;
 					this.FailedException 	= ex;
 					on_finished(false);
-					on_complete();
+					on_complete();	
 				});
 			}
 			else
