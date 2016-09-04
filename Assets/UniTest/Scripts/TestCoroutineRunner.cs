@@ -39,7 +39,7 @@ namespace UniTest
 				}
 				catch(Exception ex)
 				{
-					Debug.LogError(ex);
+					Debug.LogException(ex);
 				}
 			}
 		}
@@ -59,7 +59,6 @@ namespace UniTest
 				{
 					Type routineType = routine.GetType();
 
-					Debug.LogWarning(routineType.ToString());
 					if(routineType == typeof(WWW)) 
 					{
 						enqueueAction = () => consumeRoutineOnEditor(unwrapWWW((WWW)current, routine, canceller),canceller);
