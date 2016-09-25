@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace UniTest 
 {
-	public class TestFlow
+	public partial class TestFlow
 	{
 		public delegate void TestedScenarioEvent(TestFlow flow, string flow_method, TestReport report);
 		public event TestedScenarioEvent OnTestSucceed = delegate(TestFlow flow, string flow_method, TestReport report) {};
@@ -43,6 +43,11 @@ namespace UniTest
 
 		#region subject
 
+		public TestFlow Comment(string message) 
+		{
+			return (new TestFlow(this,getMethodName(),message ?? "",TestReportType.kComment,message)).conclude(null,null);
+		}
+
 		public TestFlow CommentIf(string message,object subject) 
 		{
 			return new TestFlow(this,getMethodName(),message,TestReportType.kComment,subject);
@@ -53,12 +58,17 @@ namespace UniTest
 			return new TestFlow(this,getMethodName(),toStringOrNull(subject),TestReportType.kComment,subject);
 		}
 
-		public TestFlow WarnIf(string message,object subject) 
+		public TestFlow Warning(string message) 
+		{
+			return (new TestFlow(this,getMethodName(),message ?? "",TestReportType.kWarning,message)).conclude(null,null);
+		}
+
+		public TestFlow WarningIf(string message,object subject) 
 		{
 			return new TestFlow(this,getMethodName(),message,TestReportType.kWarning,subject);
 		}
 
-		public TestFlow WarnAbout(object subject) 
+		public TestFlow WarningAbout(object subject) 
 		{
 			return new TestFlow(this,getMethodName(),toStringOrNull(subject),TestReportType.kWarning,subject);
 		}
@@ -677,7 +687,6 @@ namespace UniTest
 
 			return this;
 		}
-
 		#endregion
 
 		#region negation chaining

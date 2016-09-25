@@ -16,6 +16,9 @@ namespace UniTest.Sample
 		[TestStory(1, IWant:"which is must be success with coroutine")]
 		public IEnumerator SuccessTestCoroutineScope() 
 		{	
+			Comment("test commenting");
+			Warning("test warning");
+
 			int test = 0;
 			for(int i=0;i<5;i++) 
 			{
@@ -24,7 +27,7 @@ namespace UniTest.Sample
 				yield return new WaitForSeconds(0.05f);
 			}
 
-			WarnIf("list of 1 to 5",new int[] { 1,2,3,4,5 }).Should.Contains(1).And.Contains(5);
+			WarningIf("list of 1 to 5",new int[] { 1,2,3,4,5 }).Should.Contains(1).And.Contains(5);
 			CommentIf("list of 1 to 5",new int[] { 1,2,3,4,5 }).Should.Contains(1).And.Contains(5);
 			AssertIf("list of 1 to 5",new int[] { 1,2,3,4,5 }).Should.Contains(1).And.Contains(5);
 
@@ -37,14 +40,14 @@ namespace UniTest.Sample
 			AssertAbout(1).Should.Be.LesserThan(2);
 			AssertAbout(1).Should.Be.LesserThanOrEqualTo(1);
 
-			WarnAbout(true).Should.Be.True();
-			WarnAbout(false).Should.Be.False();
-			WarnAbout(0).Should.Be.ValueType();
-			WarnAbout("some string").Should.Not.Be.ValueType();
+			WarningAbout(true).Should.Be.True();
+			WarningAbout(false).Should.Be.False();
+			WarningAbout(0).Should.Be.ValueType();
+			WarningAbout("some string").Should.Not.Be.ValueType();
 
-			WarnAbout("WarnAbout will not assert").Should.MatchesWith("nothing");
+			WarningAbout("WarnAbout will not assert").Should.MatchesWith("nothing");
 			CommentAbout("CommentAbout will not assert").Should.MatchesWith("nothing");
-			WarnIf("WarnIf will not assert",null).Should.Not.Null();
+			WarningIf("WarnIf will not assert",null).Should.Not.Null();
 			CommentIf("CommentIf will not assert",(string)null).Should.MatchesWith("nothing");
 
 			CommentAbout("boo string").Should.Be.TypeOf(typeof(string));

@@ -11,6 +11,7 @@ namespace UniTest.Sample
 		{
 			int test = 1;
 			Assert("test == 1",test == 1);
+			Comment("simple comment");
 
 			for(int i=0;i<5;i++) 
 			{
