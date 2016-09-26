@@ -23,6 +23,11 @@ namespace UniTest
 			UnityEngine.Debug.Log("[<color=green>Info</color>/<color=gray>"+invoker.GetType().Name+"</color>/"+GetTimeSummary()+"] "+text);
 		}
 
+		public static void Warning(object invoker,string text)
+		{
+			UnityEngine.Debug.LogWarning("[Warning/"+invoker.GetType().Name+"/"+GetTimeSummary()+"] "+text);
+		}
+
 		public static void Exception(object invoker,Exception ex) 
 		{
 			UnityEngine.Debug.LogException(ex);
