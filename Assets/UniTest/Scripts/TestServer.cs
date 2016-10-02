@@ -29,8 +29,10 @@ namespace UniTest.Server
 		public enum MessageType 
 		{
 			UNDEFINED,
-			ECHO,
-			CLOSE,
+
+			STDIN,
+			STDOUT,
+			STDERR,
 		}
 
 		public class ClientConnection : IDisposable
@@ -93,8 +95,12 @@ namespace UniTest.Server
 						read = _client.GetStream().EndRead(result);
 					}
 
-					message = Encoding.ASCII.GetString(_buffer, 0, read - 1);
-					onLineReceived(this,message);
+					message = Encoding.UTF8.GetString(_buffer, 0, read);
+					var splitMessage = message.Split('\n');
+					for(int i=0,d=splitMessage.Length;i<d;i++) 
+					{
+						onLineReceived(this,splitMessage[i]);
+					}
 
 					lock (_client.GetStream())
 					{
@@ -254,7 +260,7 @@ namespace UniTest.Server
 			//
 			// {"foo":"boo"}
 
-			TestLogger.Verbose(this,"receiving message: "+message);
+			TestLogger.Verbose(this,"receiving message("+message.Length+"): "+message);
 
 			ProcessingMessage processor;
 			if(messages.TryGetValue(sender,out processor) == false) 
@@ -276,6 +282,9 @@ namespace UniTest.Server
 			else if(message.StartsWith("Length:")) 
 			{
 				var content = message.Substring(message.IndexOf(":")+1).Trim();
+
+				TestLogger.Verbose(this,"Length("+content.Length+"): \""+content+"\"");
+
 				long parsedLength;
 				if(long.TryParse(content,out parsedLength)) 
 				{
@@ -289,6 +298,9 @@ namespace UniTest.Server
 			else if(message.StartsWith("MessageType:")) 
 			{
 				var content = message.Substring(message.IndexOf(":")+1).Trim();
+
+				TestLogger.Verbose(this,"MessageType("+content.Length+"): \""+content+"\"");
+
 				processor.messageType = (MessageType)Enum.Parse(typeof(MessageType),content);
 			}
 			else if(message.Trim().Length == 0) 
