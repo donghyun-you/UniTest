@@ -18,8 +18,8 @@ namespace UniTest
 		public delegate void LogEvent(LogType type,object invoker,string text);
 		public delegate void LogExceptionEvent(object invoker,Exception ex);
 
-		public static event LogEvent OnLogged = new LogEvent();
-		public static event LogEvent OnExceptionLogged = new LogExceptionEvent();
+		public static event LogEvent OnLogged = delegate(LogType type, object invoker, string text) {};
+		public static event LogExceptionEvent OnExceptionLogged = delegate(object invoker, System.Exception ex) {};
 
 		private static string GetTimeSummary() 
 		{
