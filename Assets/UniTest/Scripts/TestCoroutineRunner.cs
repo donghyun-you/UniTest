@@ -190,7 +190,10 @@ namespace UniTest
 					yield break;
 				}
 
-				yield return self.Current;
+				if(hasNext) 
+				{
+					yield return self.Current;
+				}
 
 			} while(hasNext && cancellation_token.IsCancelled == false);
 
