@@ -39,19 +39,22 @@ namespace UniTest.Server
 		{
 			private const int BUFFER_SIZE = 0xff;
 			private TcpClient _client;
+			private TestServer _server;
 			private byte[] _buffer = new byte[BUFFER_SIZE];
 			private bool _isDisposed = false;
 
 			public event LineReceive onLineReceived;
 
-			public ClientConnection(TcpClient client) 
+			public ClientConnection(TestServer server,TcpClient client) 
 			{
 				_client = client;	
+				_server = server;
 				_client.GetStream().BeginRead(_buffer, 0, BUFFER_SIZE, new AsyncCallback(receiver), null);
 			}
 
 			public void Send(MessageType message_type,string data) 
 			{
+				//TestLogger.Info(this,"Sending("+message_type+"): "+data);
 				if(data == null) 
 				{
 					throw new ArgumentNullException("data");
@@ -66,6 +69,16 @@ namespace UniTest.Server
 					writer.Write(data + (char)13 + (char) + 10);
 					writer.Flush();
 				}
+			}
+
+			public void SendOut(string message) 
+			{
+				this.Send(TestServer.MessageType.STDOUT,message);
+			}
+
+			public void SendError(string message) 
+			{
+				this.Send(TestServer.MessageType.STDERR,message);
 			}
 
 			public void Dispose() 
@@ -95,16 +108,24 @@ namespace UniTest.Server
 						read = _client.GetStream().EndRead(result);
 					}
 
-					message = Encoding.UTF8.GetString(_buffer, 0, read);
-					var splitMessage = message.Split('\n');
-					for(int i=0,d=splitMessage.Length;i<d;i++) 
+					if(read > 0) 
 					{
-						onLineReceived(this,splitMessage[i]);
-					}
+						message = Encoding.UTF8.GetString(_buffer, 0, read);
+						var splitMessage = message.Split('\n');
+						for(int i=0,d=splitMessage.Length;i<d;i++) 
+						{
+							onLineReceived(this,splitMessage[i]);
+						}
 
-					lock (_client.GetStream())
+						lock (_client.GetStream())
+						{
+							_client.GetStream().BeginRead(_buffer, 0, BUFFER_SIZE, new AsyncCallback(receiver), null);
+						}
+					}
+					else 
 					{
-						_client.GetStream().BeginRead(_buffer, 0, BUFFER_SIZE, new AsyncCallback(receiver), null);
+						// message receiving failed. close the connection
+						_server.CloseClient(this);
 					}
 				} 
 				catch(Exception ex) 
@@ -197,7 +218,7 @@ namespace UniTest.Server
 
 				for(;;) 
 				{
-					var connection = new ClientConnection(_listener.AcceptTcpClient());
+					var connection = new ClientConnection(this,_listener.AcceptTcpClient());
 					connection.onLineReceived += OnLineReceived;
 					_connections.Add(connection);
 					TestLogger.Info(this,"new connection found: ");
