@@ -98,16 +98,16 @@ namespace UniTest.Server
 				switch(type) 
 				{
 					case TestLogger.LogType.kWarning:
-						sender.SendOut("[UniTest/"+invokerName+"/Warning] "+text);
+						sender.SendOut("<color=yellow>[UniTest/"+invokerName+"/Warning]</color> "+text);
 					break;
 					case TestLogger.LogType.kError:
-						sender.SendError("[UniTest/"+invokerName+"/Error] "+text);
+						sender.SendError("<color=red>[UniTest/"+invokerName+"/Error]</color> "+text);
 					break;
 					case TestLogger.LogType.kInfo:
 						sender.SendOut("[UniTest/"+invokerName+"/Info]: "+text);
 					break;
 					case TestLogger.LogType.kVerbose:
-						sender.SendOut("[UniTest/"+invokerName+"/Verbose]: "+text);
+						sender.SendOut("<color=cyan>[UniTest/"+invokerName+"/Verbose]</color> "+text);
 					break;
 				}
 			};

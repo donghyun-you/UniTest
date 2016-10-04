@@ -7,9 +7,17 @@ PORT=7701
 BUFFER_SIZE=0xff
 
 COLORMAP={
-        '<color=red>'       : '\033[91m',
-        '<color=green>'     : '\033[92m',
-        '<color=yellow>'    : '\033[93m',
+        '<color=red>'       : '\033[1;31m',
+        '<color=green>'     : '\033[1;32m',
+        '<color=yellow>'    : '\033[1;33m',
+        '<color=gray>'      : '\033[0;37m',
+        '<color=blue>'      : '\033[0;34m',
+        '<color=aqua>'      : '\033[1;34m',
+        '<color=cyan>'      : '\033[1;34m',
+        '<color=orange>'    : '\033[38;5;95;38;5;214m',
+        '<color=purple>'    : '\033[0;35m',
+        '<color=magenta>'   : '\033[0;35m',
+        '<color=white>'     : '\033[1;37m',
         '</color>'          : '\033[0m'
          }
 
@@ -123,16 +131,22 @@ class UniTestClient(asyncore.dispatcher):
         #print "Verbose> receiving message"
         #print "MessageType: "+message_type
         if(message_type == "STDOUT"):
-            sys.stdout.write(body)
+            sys.stdout.write(self.replace_color_tags(body))
             sys.stdout.write("\n")
 
         elif(message_type == "STDERR"):
-            sys.stderr.write(body)
+            sys.stderr.write(self.replace_color_tags(body))
             sys.stderr.write("\n")
 
         else:
             print message_type
             print body
+
+    def replace_color_tags(self,src):
+        for unityColorTag,shellColorCode in COLORMAP.iteritems():
+            src = src.replace(unityColorTag,shellColorCode)
+
+        return src    
 
     def unset_processing_message(self):
         self.recvBuffer = None

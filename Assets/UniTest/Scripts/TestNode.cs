@@ -182,7 +182,7 @@ namespace UniTest
 				if(this.TestState == TestResultType.kFailed && this.IsIgnoreNextOnFailure) 
 				{
 					testCase.MarkAsIgnored();
-					TestLogger.Info(this,"<color=gray>[ignored] "+testCase.SelfStory+"</color>");
+					TestLogger.Warning(this,"<color=gray>[ignored] "+testCase.SelfStory+"</color>");
 				} 
 				else 
 				{
@@ -195,7 +195,7 @@ namespace UniTest
 						}
 						else 
 						{
-							TestLogger.Info(this,"<color=red>\u2716 "+testCase.SelfStory+"</color>");
+							TestLogger.Error(this,"<color=red>\u2716 "+testCase.SelfStory+"</color>");
 						}
 
 						if(result == false) 
