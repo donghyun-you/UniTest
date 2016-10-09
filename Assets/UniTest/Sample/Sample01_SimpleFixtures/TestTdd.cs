@@ -3,7 +3,7 @@ using System.Collections;
 
 namespace UniTest.Sample 
 {
-	[TestScenario(2,Summary:"Tdd example")]
+	[TestScenario(3,Summary:"Tdd example")]
 	public class TestTdd : TestFlow
 	{
 		[TestScenario(1, Summary:"test with coroutine for success test")]

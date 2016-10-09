@@ -85,55 +85,68 @@ namespace UniTest.Server
 			}
 		}
 
+		private bool _isTestRunning = false;
+
 		private void OnMessageReceived(TestServer.ClientConnection sender,Protocol.RunAllTest message) 
 		{
 			TestLogger.Verbose(this,"RunAllTest");
 
-			var tester = TesterManager.Instance.Tester;
+			if(_isTestRunning) 
+			{
+				sender.SendError("[UniTest/Error]: Test is already invoked and running. ignoring your request");
+			}
+			else 
+			{
+				_isTestRunning = true;
 
-			TestLogger.LogEvent onLogged = delegate(TestLogger.LogType type, object invoker, string text) {
+				var tester = TesterManager.Instance.Tester;
+				tester.Tester.Reset();
 
-				string invokerName = invoker == null ? "null" : invoker.GetType().Name;
+				TestLogger.LogEvent onLogged = delegate(TestLogger.LogType type, object invoker, string text) {
 
-				switch(type) 
-				{
-					case TestLogger.LogType.kWarning:
-						sender.SendOut("<color=yellow>[UniTest/"+invokerName+"/Warning]</color> "+text);
-					break;
-					case TestLogger.LogType.kError:
-						sender.SendError("<color=red>[UniTest/"+invokerName+"/Error]</color> "+text);
-					break;
-					case TestLogger.LogType.kInfo:
-						sender.SendOut("[UniTest/"+invokerName+"/Info]: "+text);
-					break;
-					case TestLogger.LogType.kVerbose:
-						sender.SendOut("<color=cyan>[UniTest/"+invokerName+"/Verbose]</color> "+text);
-					break;
-				}
-			};
+					string invokerName = invoker == null ? "null" : invoker.GetType().Name;
 
-			TestLogger.LogExceptionEvent onExceptionLogged = delegate(object invoker, Exception ex) {
+					switch(type) 
+					{
+						case TestLogger.LogType.kWarning:
+							sender.SendOut("<color=yellow>[UniTest/"+invokerName+"/Warning]</color> "+text);
+						break;
+						case TestLogger.LogType.kError:
+							sender.SendError("<color=red>[UniTest/"+invokerName+"/Error]</color> "+text);
+						break;
+						case TestLogger.LogType.kInfo:
+							sender.SendOut("[UniTest/"+invokerName+"/Info]: "+text);
+						break;
+						case TestLogger.LogType.kVerbose:
+							sender.SendOut("<color=cyan>[UniTest/"+invokerName+"/Verbose]</color> "+text);
+						break;
+					}
+				};
 
-				sender.SendError("[UniTest/"+invoker+"/Exception]: "+ex.Message+"\n"+ex.StackTrace);
+				TestLogger.LogExceptionEvent onExceptionLogged = delegate(object invoker, Exception ex) {
 
-			};
+					sender.SendError("[UniTest/"+invoker+"/Exception]: "+ex.Message+"\n"+ex.StackTrace);
 
-			TestLogger.OnLogged += onLogged;
-			TestLogger.OnExceptionLogged += onExceptionLogged;
+				};
 
-			var loggerDisposables = DisposableCreator.Create(()=>{
+				TestLogger.OnLogged += onLogged;
+				TestLogger.OnExceptionLogged += onExceptionLogged;
 
-				TestLogger.OnLogged -= onLogged;
-				TestLogger.OnExceptionLogged -= onExceptionLogged;
+				var loggerDisposables = DisposableCreator.Create(()=>{
 
-			});
+					TestLogger.OnLogged -= onLogged;
+					TestLogger.OnExceptionLogged -= onExceptionLogged;
 
-			tester.Run(result=>{
-				TestLogger.Info(this,"test done: "+result);
-			},()=>{
-				loggerDisposables.Dispose();
-				_server.CloseClient(sender);
-			});
+				});
+
+				tester.Run(result=>{
+					TestLogger.Info(this,"test done: "+result);
+				},()=>{
+					loggerDisposables.Dispose();
+					_server.CloseClient(sender);
+					_isTestRunning = false;
+				});
+			}
 		}
 
 		private void OnMessageReceived(TestServer.ClientConnection sender,Protocol.RunTestOfType message) 

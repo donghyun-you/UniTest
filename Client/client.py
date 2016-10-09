@@ -1,10 +1,23 @@
 #!/usr/bin/env python
 
-import asyncore, socket, json, sys
+import asyncore, socket, json, sys, getopt
 
-HOST="localhost"
+opts, args = getopt.getopt(sys.argv[1:],"ha:p:m:",["address=","port=","method="])
+
+HOST="127.0.0.1"
 PORT=7701
 BUFFER_SIZE=0xff
+METHOD="RunAllTest" # or RunTestOfType:NameOfType (ex: RunTestOfType:UniTest.Sample.TestBddSuccess) 
+
+for opt,arg in opts:
+    if opt == '-h':
+        print 'client.py --address <address> --port <port>'
+        sys.exit(2)
+    elif opt in ("-a","--address"):
+        HOST=arg
+        print "address configured: "
+    elif opt in ("-p","--port"):
+        PORT=int(arg)
 
 COLORMAP={
         '<color=red>'       : '\033[1;31m',

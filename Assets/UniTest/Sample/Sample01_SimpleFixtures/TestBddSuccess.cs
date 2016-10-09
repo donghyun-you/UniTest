@@ -10,7 +10,7 @@ namespace UniTest.Sample
 				IWant	: "The Test Story",
 				SoThat	: "Passed"
 				)]
-	public class TestBdd : TestFlow
+	public class TestBddSuccess : TestFlow
 	{
 
 		[TestStory(1, IWant:"which is must be success with coroutine")]
@@ -60,16 +60,7 @@ namespace UniTest.Sample
 		[TestStory(2, IWant:"of Example Substory")]
 		public class TestExample : TestFlow
 		{
-			[TestStory(1, IWant:"which is must be success")]
-			public void SuccessTestSimpleScope() 
-			{
-				Exception ex = null;
-				AssertAbout(ex).Should.Not.Be.Thrown();
-				object nullable = null;
-				AssertAbout(nullable).Should.Be.Null();
-			}
-
-			[TestStory(2, IWant:"which is must be failure")]
+			[TestStory(1, IWant:"which is must be failure")]
 			public void FailureTestSimpleScope() 
 			{
 				Exception ex = new Exception();

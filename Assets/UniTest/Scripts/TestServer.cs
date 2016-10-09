@@ -16,7 +16,7 @@ namespace UniTest.Server
 	public class TestServer
 	{
 		#region config
-		private const string IP = "127.0.0.1";
+		private const string IP = "0.0.0.0";
 		#endregion
 
 		#region threadsafe events
@@ -159,7 +159,7 @@ namespace UniTest.Server
 		public void Start() 
 		{
 
-			TestLogger.Info(this,"start");
+			TestLogger.Info(this,"start: "+_ip+":"+_port);
 
 			if(_thread != null) 
 			{

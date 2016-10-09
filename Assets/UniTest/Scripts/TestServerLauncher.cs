@@ -11,7 +11,7 @@ namespace UniTest.Server
 		// Use this for initialization
 		void Start () 
 		{
-			server = TestServer.Factory.Create();	
+			server = TestServer.Factory.Create(7701);	
 			handlers = new TestServerHandlers(server);
 			server.Start();
 		}
