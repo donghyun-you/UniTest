@@ -11,15 +11,18 @@ METHOD="RunAllTest" # or RunTestOfType:NameOfType (ex: RunTestOfType:UniTest.Sam
 
 for opt,arg in opts:
     if opt == '-h':
-        print 'client.py --address <address> --port <port>'
+        print 'client.py --address <address> --port <port> --method <MethodNamespace.NestedNamespace.Class+NestedClass>'
         sys.exit(2)
     elif opt in ("-a","--address"):
         HOST=arg
     elif opt in ("-p","--port"):
         PORT=int(arg)
+    elif opt in ("-m","--method"):
+        METHOD="RunTestOfType:"+arg
 
-print "address: "+arg
-print "port: "+arg
+print "address: "+HOST
+print "port: "+str(PORT)
+print "method: "+METHOD
 
 COLORMAP={
         '<color=red>'       : '\033[1;31m',
@@ -166,7 +169,15 @@ class UniTestClient(asyncore.dispatcher):
     def unset_processing_message(self):
         self.recvBuffer = None
         self.response = None
-        
 
-client = UniTestClient(HOST,PORT,"STDIN",{"func":"RunAllTest"})
+parsedMethod=METHOD.split(':')
+print parsedMethod
+if len(parsedMethod) >= 2:
+    stdinFunc=parsedMethod[0]
+    stdinArgs=parsedMethod[1]
+else:
+    stdinFunc=parsedMethod[0]
+    stdinArgs=None
+
+client = UniTestClient(HOST,PORT,"STDIN",{"func":stdinFunc,"args":stdinArgs})
 asyncore.loop()

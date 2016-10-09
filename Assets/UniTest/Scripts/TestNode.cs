@@ -75,6 +75,11 @@ namespace UniTest
 		{
 			public static TestNode Create(Type node_type, TestNode parent) 
 			{
+				if(node_type == null) 
+				{
+					throw new ArgumentNullException("node_type");
+				}
+
 				var testStoryAttributes = node_type.GetCustomAttributes(typeof(TestCaseAttribute),false).Select(entry => entry as TestCaseAttribute);
 
 				if(!testStoryAttributes.Any()) 

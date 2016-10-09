@@ -12,7 +12,6 @@ namespace UniTest.Sample
 				)]
 	public class TestBddSuccess : TestFlow
 	{
-
 		[TestStory(1, IWant:"which is must be success with coroutine")]
 		public IEnumerator SuccessTestCoroutineScope() 
 		{	
@@ -60,34 +59,14 @@ namespace UniTest.Sample
 		[TestStory(2, IWant:"of Example Substory")]
 		public class TestExample : TestFlow
 		{
-			[TestStory(1, IWant:"which is must be failure")]
-			public void FailureTestSimpleScope() 
+			[TestStory(1, IWant:"which is must be success")]
+			public void SuccessTestSimpleScope() 
 			{
-				Exception ex = new Exception();
+				Exception ex = null;
 				AssertAbout(ex).Should.Not.Be.Thrown();
+				object nullable = null;
+				AssertAbout(nullable).Should.Be.Null();
 			}
-
-			[TestStory(3, IWant:"which is must be ignored")]
-			public void IgnoredScenarioOfThird() 
-			{
-				AssertIf("This story",false).Should.Be.False();
-			}
-		}
-
-		[TestStory(3, IWant: "which is must be ignored with coroutine")]
-		public IEnumerator FailureTestCoroutineScope1() 
-		{
-			AssertIf("This coroutine story #3",true).Should.Be.True();
-			yield return null;
-			AssertIf("This coroutine story #4, I know this story will be failure but, ",false).Must.Be.True();
-		}
-
-		[TestStory(4, IWant: "which is must be ignored")]
-		public IEnumerator FailureTestCoroutineScope2() 
-		{
-			AssertIf("This coroutine story #5",false).Should.Be.False();
-			yield return null;
-			AssertIf("This coroutine story #6, I know this stroy will be failure but,",true).Should.Not.Be.True();
 		}
 	}
 }

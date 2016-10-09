@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Linq;
 
 namespace UniTest.Server 
 {
@@ -57,6 +58,8 @@ namespace UniTest.Server
 
 			Type containerType = Type.GetType("UniTest.Server.TestServerHandlers+Protocol+"+_receiver.func);
 
+			TestLogger.Info(this,"received type: "+containerType);
+
 			if(containerType == null) 
 			{
 				TestLogger.Warning(this,"dropping stdin message. unexpected protocol: "+json);
@@ -84,7 +87,14 @@ namespace UniTest.Server
 			{
 				public Type GetTestType() 
 				{
-					return Type.GetType(args.Trim());
+					var type = Type.GetType(args.Trim());
+
+					if(type == null) 
+					{
+						throw new InvalidOperationException("Type: "+(args.Trim() ?? "")+" cannot be parsed");
+					}
+
+					return type;
 				}
 			}
 		}
@@ -102,10 +112,38 @@ namespace UniTest.Server
 			{
 				_isTestRunning = true;
 
-				var tester = TesterManager.Instance.Tester;
-				tester.Tester.Reset();
+				CompositeTestRunner tester = new CompositeTestRunner("All Tests");
+				tester.AddRange(TestRunner.GetRootStories().Select(type=>new TestRunner(type) as ITestRunner));
 
 				TestLogger.Verbose(this,"RunAllTest");
+
+				_senders.Add(sender);
+
+				tester.Run(result=>{
+					TestLogger.Info(this,"test done: "+result);
+				},()=>{
+					_senders.Remove(sender);
+					_server.CloseClient(sender);
+					_isTestRunning = false;
+				});
+			}
+		}
+
+		private void OnMessageReceived(TestServer.ClientConnection sender,Protocol.RunTestOfType message) 
+		{
+			var testType = message.GetTestType();
+
+			if(_isTestRunning) 
+			{
+				sender.SendError("[UniTest/Error]: Test is already invoked and running. ignoring your request");
+			}
+			else 
+			{
+				_isTestRunning = true;
+
+				ITestRunner tester = new TestRunner(testType) as ITestRunner;
+
+				TestLogger.Verbose(this,"RunTestOfType: "+(testType == null ? "?":testType.ToString()));
 
 				_senders.Add(sender);
 
@@ -167,14 +205,6 @@ namespace UniTest.Server
 
 		}
 
-		private void OnMessageReceived(TestServer.ClientConnection sender,Protocol.RunTestOfType message) 
-		{
-			var testType = message.GetTestType();
-			TestLogger.Verbose(this,"RunTestOfType: "+(testType == null ? "?":testType.ToString()));
-			sender.SendOut(JsonUtility.ToJson(new string[] { "TestOut" }));
-			sender.SendError(JsonUtility.ToJson(new string[] { "TestError" }));
-			_server.CloseClient(sender);
-		}
 		#endregion
 		
 
