@@ -37,11 +37,25 @@ namespace UniTest.Server
 
 		public class ClientConnection : IDisposable
 		{
+			public static int s_increment = 0;
+			public int InstanceId 
+			{
+				get; 
+				private set;
+			}
+
 			private const int BUFFER_SIZE = 0xff;
 			private TcpClient _client;
 			private TestServer _server;
 			private byte[] _buffer = new byte[BUFFER_SIZE];
 			private bool _isDisposed = false;
+			public bool IsDisposed 
+			{
+				get 
+				{
+					return _isDisposed; 
+				}
+			}
 
 			public event LineReceive onLineReceived;
 
@@ -50,6 +64,7 @@ namespace UniTest.Server
 				_client = client;	
 				_server = server;
 				_client.GetStream().BeginRead(_buffer, 0, BUFFER_SIZE, new AsyncCallback(receiver), null);
+				InstanceId = s_increment++;
 			}
 
 			public void Send(MessageType message_type,string data) 

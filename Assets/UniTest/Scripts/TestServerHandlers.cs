@@ -18,6 +18,8 @@ namespace UniTest.Server
 		{
 			_server = server;
 			disposable = BindPackets(server);	
+			TestLogger.OnLogged += onLogReceived;
+			TestLogger.OnExceptionLogged += onExceptionReceived;
 		}
 
 		public void Dispose() 
@@ -26,6 +28,8 @@ namespace UniTest.Server
 			{
 				_isDisposed = true;
 				disposable.Dispose();
+				TestLogger.OnLogged -= onLogReceived;
+				TestLogger.OnExceptionLogged -= onExceptionReceived;
 			}
 		}
 
@@ -86,11 +90,10 @@ namespace UniTest.Server
 		}
 
 		private bool _isTestRunning = false;
+		private List<TestServer.ClientConnection> _senders = new List<TestServer.ClientConnection>();
 
 		private void OnMessageReceived(TestServer.ClientConnection sender,Protocol.RunAllTest message) 
 		{
-			TestLogger.Verbose(this,"RunAllTest");
-
 			if(_isTestRunning) 
 			{
 				sender.SendError("[UniTest/Error]: Test is already invoked and running. ignoring your request");
@@ -102,51 +105,66 @@ namespace UniTest.Server
 				var tester = TesterManager.Instance.Tester;
 				tester.Tester.Reset();
 
-				TestLogger.LogEvent onLogged = delegate(TestLogger.LogType type, object invoker, string text) {
+				TestLogger.Verbose(this,"RunAllTest");
 
-					string invokerName = invoker == null ? "null" : invoker.GetType().Name;
-
-					switch(type) 
-					{
-						case TestLogger.LogType.kWarning:
-							sender.SendOut("<color=yellow>[UniTest/"+invokerName+"/Warning]</color> "+text);
-						break;
-						case TestLogger.LogType.kError:
-							sender.SendError("<color=red>[UniTest/"+invokerName+"/Error]</color> "+text);
-						break;
-						case TestLogger.LogType.kInfo:
-							sender.SendOut("[UniTest/"+invokerName+"/Info]: "+text);
-						break;
-						case TestLogger.LogType.kVerbose:
-							sender.SendOut("<color=cyan>[UniTest/"+invokerName+"/Verbose]</color> "+text);
-						break;
-					}
-				};
-
-				TestLogger.LogExceptionEvent onExceptionLogged = delegate(object invoker, Exception ex) {
-
-					sender.SendError("[UniTest/"+invoker+"/Exception]: "+ex.Message+"\n"+ex.StackTrace);
-
-				};
-
-				TestLogger.OnLogged += onLogged;
-				TestLogger.OnExceptionLogged += onExceptionLogged;
-
-				var loggerDisposables = DisposableCreator.Create(()=>{
-
-					TestLogger.OnLogged -= onLogged;
-					TestLogger.OnExceptionLogged -= onExceptionLogged;
-
-				});
+				_senders.Add(sender);
 
 				tester.Run(result=>{
 					TestLogger.Info(this,"test done: "+result);
 				},()=>{
-					loggerDisposables.Dispose();
+					_senders.Remove(sender);
 					_server.CloseClient(sender);
 					_isTestRunning = false;
 				});
 			}
+		}
+
+		private void onLogReceived(TestLogger.LogType type, object invoker, string text) 
+		{
+			foreach(var sender in _senders) 
+			{
+				if(sender.IsDisposed) 
+				{
+					Debug.Log("["+this.GetType().Name+"] sender("+sender.InstanceId+") is disposed. this log will not be sent: "+text);
+				}
+				else 
+				{
+					string invokerName = invoker == null ? "null" : invoker.GetType().Name;
+
+					switch(type) 
+					{
+					case TestLogger.LogType.kWarning:
+						sender.SendOut("<color=yellow>[UniTest/"+invokerName+"/Warning]</color> "+text);
+						break;
+					case TestLogger.LogType.kError:
+						sender.SendError("<color=red>[UniTest/"+invokerName+"/Error]</color> "+text);
+						break;
+					case TestLogger.LogType.kInfo:
+						sender.SendOut("[UniTest/"+invokerName+"/Info]: "+text);
+						break;
+					case TestLogger.LogType.kVerbose:
+						sender.SendOut("<color=cyan>[UniTest/"+invokerName+"/Verbose]</color> "+text);
+						break;
+					}
+				}
+			}
+		}
+
+		private void onExceptionReceived(object invoker, Exception ex) 
+		{
+
+			foreach(var sender in _senders) 
+			{
+				if(sender.IsDisposed) 
+				{
+					Debug.Log("["+this.GetType().Name+"] sender("+sender.InstanceId+") is disposed. this log will not be sent: "+ex.ToString());
+				}
+				else 
+				{
+					sender.SendError("[UniTest/"+invoker+"/Exception]: "+ex.Message+"\n"+ex.StackTrace);
+				}
+			}
+
 		}
 
 		private void OnMessageReceived(TestServer.ClientConnection sender,Protocol.RunTestOfType message) 

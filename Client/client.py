@@ -15,9 +15,11 @@ for opt,arg in opts:
         sys.exit(2)
     elif opt in ("-a","--address"):
         HOST=arg
-        print "address configured: "
     elif opt in ("-p","--port"):
         PORT=int(arg)
+
+print "address: "+arg
+print "port: "+arg
 
 COLORMAP={
         '<color=red>'       : '\033[1;31m',
