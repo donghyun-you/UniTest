@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 # NOTE(ruel): default as usb devices
-ERBOSE="FALSE"
+VERBOSE="FALSE"
 PACKAGE="com.ruel.unitest"
 MAIN_ACTIVITY="com.unity3d.player.UnityPlayerActivity"
 
