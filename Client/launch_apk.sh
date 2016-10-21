@@ -72,12 +72,35 @@ do
 	IP_ADDRS_HEAD=$(echo $IP_ADDRS | awk '{split($0,a,"."); print a[1]"."a[2]"."a[3]}')
 	IP_ADDRS_INTERSECT=$(echo $LOCAL_IPS_HEAD $IP_ADDRS_HEAD | tr ' ' '\n' | sort | uniq -d)
 
+	ANDROID_MAJOR_VERSION=$(adb -s $DEVICE_ID shell getprop ro.build.version.release | grep -Eo "^[0-9]{1}")
+
+	IS_SCREEN_ON="FALSE"
+	if [[ "$ANDROID_MAJOR_VERSION" -le 4 ]];
+	then
+		if [ "$(adb -s $DEVICE_ID shell dumpsys input_method | grep -oE 'mScreenOn=[a-z]*')" == "mScreenOn=true" ];
+		then
+		IS_SCREEN_ON="TRUE"
+		fi
+	else
+		if [ "$(adb -s $DEVICE_ID shell dumpsys power | grep -oE "Display Power: state=[A-Z]*")" == "Display Power: state=ON" ];
+		then
+		IS_SCREEN_ON="TRUE"
+		fi
+	fi
+
+	if [ "$IS_SCREEN_ON" == "FALSE" ];
+	then
+		adb -s $DEVICE_ID shell input keyevent KEYCODE_POWER	
+	fi
+
 	#adb -s $DEVICE_ID shell input keyevent 26 #Pressing the lock button
 	#adb -s $DEVICE_ID shell input keyevent 66 #Pressing Enter
 	adb -s $DEVICE_ID shell input keyevent KEYCODE_HOME
 
 	echo "Try uninstalling $PACKAGE ..."
-	adb -s $DEVICE_ID uninstall $PACKAGE 
+	adb -s $DEVICE_ID uninstall $PACKAGE
+
+	echo "Installing $PACKAGE ..."
 	adb -s $DEVICE_ID install "$APK"
 
 	adb -s $DEVICE_ID shell am start -n "$PACKAGE/$MAIN_ACTIVITY"
@@ -86,7 +109,7 @@ do
 	while [ $LISTEN == "FALSE" ];
 	do	
 		sleep 1
-		LISTENING=$(adb -s 015d490628101c0a shell netstat | grep :7701 | grep -o LISTEN)
+		LISTENING=$(adb -s $DEVICE_ID shell netstat | grep :7701 | grep -o LISTEN)
 		if [ "$LISTENING" == "LISTEN" ];
 		then
 			LISTEN="TRUE"
