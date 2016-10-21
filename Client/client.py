@@ -88,13 +88,16 @@ class UniTestClient(asyncore.dispatcher):
             self.recvBuffer += received_buffer
         
         while(self.recvBuffer is not None and len(self.recvBuffer)>0):
-            index = self.recvBuffer.index('\n')+1
-            if(index > 0):
+            
+            try: 
+                index = self.recvBuffer.index('\n')+1
+                
                 self.process_receive_line(self.recvBuffer[:index])
                 
                 if(self.recvBuffer is not None):
                     self.recvBuffer = self.recvBuffer[index:]        
-            else:
+            
+            except ValueError:
                 self.process_receive_line(self.recvBuffer)
                 self.recvBuffer = None
                 break
