@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+source ./dependency_android.sh
+
 # NOTE(ruel): default as usb devices
 VERBOSE="FALSE"
 DEPLOY_TARGET_ID="\*"
