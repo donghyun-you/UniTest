@@ -23,15 +23,7 @@ while getopts ":vi:x:b:" opt; do
 	esac
 done
 
-function safe_exit(){
-	
-	if [ "$VERBOSE" == "TRUE" ];
-	then
-		set +x;
-	fi
-
-	exit $1
-}
+source ./safe_exit.sh
 
 if [ "$VERBOSE" == "TRUE" ];
 then
@@ -40,7 +32,7 @@ fi
 
 if [ ! -v DEVICE_ID ]
 then 
-	echo "Error: -i option (DEVICE_ID, ip or adb usb identifier) required" >&2
+	echo "Error: -i option (DEVICE_ID, ip or adb usb identifier) required" 1>&2
 	safe_exit 1
 fi
 

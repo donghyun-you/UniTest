@@ -19,6 +19,8 @@ while getopts ":vi:x:" opt; do
 	esac
 done
 
+source ./safe_exit.sh
+
 if [ "$VERBOSE" == "TRUE" ];
 then
 	set -x;
@@ -26,8 +28,8 @@ fi
 
 if [ ! -v DEVICE_ID ]
 then 
-	echo "Error: -i option (DEVICE_ID, ip or adb usb identifier) required" >&2
-	exit 1;
+	echo "Error: -i option (DEVICE_ID, ip or adb usb identifier) required" 1>&2
+	safe_exit 1
 fi
 
 LOCAL_IPS_HEAD=$(ifconfig | grep inet | awk '{print $2}' | grep -Eo '^[0-9\.]{8,16}' | awk '{split($0,a,"."); print a[1]"."a[2]"."a[3]}')
@@ -49,7 +51,4 @@ done
 
 echo $RESULT | tr ' ' '\n' | grep -v ^0. | grep -v ^127.
 
-if [ "$VERBOSE" == "TRUE" ];
-then
-	set +x;
-fi
+safe_exit 0

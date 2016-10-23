@@ -2,14 +2,13 @@
 
 # NOTE(ruel): default as usb devices
 VERBOSE="FALSE"
-PACKAGE="com.ruel.unitest"
 DEPLOY_TARGET_ID="\*"
 
 # NOTE(ruel): receive argument and organize
-while getopts ":f:p:vp:i:" opt; do
+while getopts ":f:p:vi:" opt; do
 	case $opt in
 		:)
-			echo "Usage: -f {IOS_APP_PATH}, -p [Package name:default(com.ruel.unitest)] -v(verbose)"
+			echo "Usage: -f {IOS_APP_PATH} -i {DEPLOY_IOS_DEVICE_TARGET_ID} -v(verbose)"
 			exit 1
 			;;
 		v)
@@ -21,54 +20,58 @@ while getopts ":f:p:vp:i:" opt; do
 		f)
 			IOS_APP=$OPTARG
 			;;
-		p)
-			PACKAGE=$OPTARG
-			;;
 			
 	esac
 done
+
+source ./safe_exit.sh
 
 if [ "$VERBOSE" == "TRUE" ];
 then
 	set -x;
 fi
 
-#TEMP_FOLDER="/tmp/"$(date +%s)"_"$IOS_APP
-
-#LOCAL_IPS_HEAD=$(ifconfig | grep inet | awk '{print $2}' | grep -Eo '^[0-9\.]{8,16}' | grep -v ^127 |awk '{split($0,a,"."); print a[1]"."a[2]"."a[3]}')
 DEVICE_IDS=$(ios-deploy --detect | grep -Eo "[a-fA-F0-9]{40}")
 
 # NOTE(ruel): check argument configured
 if [ ! -v IOS_APP ]; 
 then 
-	echo "Error: -f {IOS_APP_PATH} option required";
-	exit 0;
+	echo "Error: -f {IOS_APP_PATH} option required" 1>&2
+	safe_exit 1
 fi
 
 # NOTE(ruel): check file exists
 if [ ! -d $IOS_APP ];
 then	
-	echo $IOS_APP" is not exists!"
-	exit 0;
+	echo $IOS_APP" is not exists!" 1>&2
+	safe_exit 1
 fi
 
-echo "iOS App file to install: $IOS_APP"
+BUNDLE_ID=$(mdls -name kMDItemCFBundleIdentifier -r $IOS_APP)
+
+if [ -z "$BUNDLE_ID" ]
+then
+	echo $IOS_APP" is not ios app. unable to retrieve bundle id" 1>&2
+	safe_exit 1
+fi 
+
+echo "iOS App file to install: $IOS_APP, Bundle Identifier: $BUNDLE_ID"
 
 for DEVICE_ID in $DEVICE_IDS;
 do
 	if [ $DEPLOY_TARGET_ID == "\*" ] || [ $DEVICE_ID == $DEPLOY_TARGET_ID ]
 	then 
-		echo "Try uninstalling $PACKAGE ..."
-		ios-deploy --id $DEVICE_ID --no-wifi --uninstall_only --bundle_id $PACKAGE
+		echo "Try uninstalling $BUNDLE_ID ..."
+		ios-deploy --id $DEVICE_ID --no-wifi --uninstall_only --bundle_id $BUNDLE_ID
 
-		echo "Installing and launching $PACKAGE from $IOS_APP ..."
+		echo "Installing and launching $BUNDLE_ID from $IOS_APP ..."
 		ios-deploy --id $DEVICE_ID --no-wifi --justlaunch --bundle $IOS_APP
 
 		IP_ADDRS_GET_RESULT=1
 
 		while [ $IP_ADDRS_GET_RESULT -eq 1 ];
 		do
-			IP_ADDRS=$(source ./list_ios_ip.sh -i $DEVICE_ID -b com.ruel.unitest ) </dev/null; IP_ADDRS_GET_RESULT=$?
+			IP_ADDRS=$(source ./list_ios_ip.sh -i $DEVICE_ID -b $BUNDLE_ID ) </dev/null; IP_ADDRS_GET_RESULT=$?
 			sleep 1
 		done
 
@@ -111,7 +114,4 @@ do
 	fi 
 done
 
-if [ "$VERBOSE" == "TRUE" ];
-then
-	set +x;
-fi
+safe_exit 0

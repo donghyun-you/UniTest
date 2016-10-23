@@ -19,6 +19,8 @@ while getopts ":vi:x:" opt; do
 	esac
 done
 
+source ./safe_exit.sh
+
 if [ "$VERBOSE" == "TRUE" ];
 then
 	set -x;
@@ -26,8 +28,8 @@ fi
 
 if [ ! -v DEVICE_ID ]
 then 
-	echo "Error: -i option (DEVICE_ID, ip or adb usb identifier) required" >&2
-	exit 1;
+	echo "Error: -i option (DEVICE_ID, ip or adb usb identifier) required" 1>&2
+	safe_exit 1
 fi
 
 SCREENSHOT=$(echo "/tmp/"$DEVICE_ID".screen.png")
@@ -44,7 +46,4 @@ adb -s $DEVICE_ID shell screencap -p $SCREENSHOT_REMOTE_TEMP
 adb -s $DEVICE_ID pull $SCREENSHOT_REMOTE_TEMP $SCREENSHOT
 adb -s $DEVICE_ID shell rm $SCREENSHOT_REMOTE_TEMP
 
-if [ "$VERBOSE" == "TRUE" ];
-then
-	set +x;
-fi
+safe_exit 0
