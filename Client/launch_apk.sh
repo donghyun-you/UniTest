@@ -4,12 +4,13 @@
 VERBOSE="FALSE"
 PACKAGE="com.ruel.unitest"
 MAIN_ACTIVITY="com.unity3d.player.UnityPlayerActivity"
+DEPLOY_TARGET_ID="\*"
 
 # NOTE(ruel): receive argument and organize
-while getopts ":f:m:p:c:vp:" opt; do
+while getopts ":f:m:p:c:vp:i:" opt; do
 	case $opt in
 		:)
-			echo "Usage: -f {APK_PATH}, -m [ETH,USB(default)], -p [Package name:default(com.ruel.unitest)] -c [main activity name:default(com.unity3d.player.UnityPlayerActivity)] -v(verbose)"
+			echo "Usage: -f {APK_PATH}, -i {DEVICE_ID} -m [ETH,USB(default)], -p [Package name:default(com.ruel.unitest)] -c [main activity name:default(com.unity3d.player.UnityPlayerActivity)] -v(verbose)"
 			exit 1
 			;;
 		v)
@@ -17,6 +18,9 @@ while getopts ":f:m:p:c:vp:" opt; do
 			;;
 		f)
 			APK=$OPTARG
+			;;
+		i)
+			DEPLOY_TARGET_ID=$OPTARG
 			;;
 		p)
 			PACKAGE=$OPTARG
@@ -40,24 +44,23 @@ then
 	set -x;
 fi
 
-ADB_EN_ADDR=$(adb devices | grep -E '^[0-9\.]{8,16}' | awk '{print $1}' | awk '{split($0,a,":"); print a[1]}')
-ADB_USB_DEVICES=$(adb devices | grep -E '^[0-9a-zA-Z]{16}' | awk '{print $1}')
+ADB_EN_ADDR=$(source ./list_android_wifi_devices.sh | awk '{split($0,a,":"); print a[1]}')
+ADB_USB_DEVICES=$(source ./list_android_usb_devices.sh)
 
-
-LOCAL_IPS_HEAD=$(ifconfig | grep inet | awk '{print $2}' | grep -Eo '^[0-9\.]{8,16}' | grep -v ^127 |awk '{split($0,a,"."); print a[1]"."a[2]"."a[3]}')
+#LOCAL_IPS_HEAD=$(ifconfig | grep inet | awk '{print $2}' | grep -Eo '^[0-9\.]{8,16}' | grep -v ^127 |awk '{split($0,a,"."); print a[1]"."a[2]"."a[3]}')
 DEVICE_IDS=$ADB_USB_DEVICES
 
 # NOTE(ruel): check argument configured
 if [ ! -v APK ]; 
 then 
-	echo "Error: -a {APK_PATH} option required";
+	echo "Error: -f {APK_PATH} option required" >&2
 	exit 0;
 fi
 
 # NOTE(ruel): check file exists
 if [ ! -f $APK ];
 then	
-	echo $APK" is not exists!"
+	echo "Error: "$APK" is not exists!" >&2
 	exit 0;
 fi
 
@@ -65,70 +68,60 @@ echo "APK file to install: $APK"
 
 for DEVICE_ID in $DEVICE_IDS;
 do
-	SCREENSHOT=$(echo "/tmp/"$DEVICE_ID".screen.png")
-	SCREENSHOT_REMOTE_TEMP=$(echo "/sdcard/"$DEVICE_ID".screen.png")
 
-	IP_ADDRS=$(adb -s $DEVICE_ID shell ip addr show | grep inet | awk '{print $2}' | grep -Eo '^[0-9\.]{8,16}' | grep -v ^127)
-	IP_ADDRS_HEAD=$(echo $IP_ADDRS | awk '{split($0,a,"."); print a[1]"."a[2]"."a[3]}')
-	IP_ADDRS_INTERSECT=$(echo $LOCAL_IPS_HEAD $IP_ADDRS_HEAD | tr ' ' '\n' | sort | uniq -d)
-
-	ANDROID_MAJOR_VERSION=$(adb -s $DEVICE_ID shell getprop ro.build.version.release | grep -Eo "^[0-9]{1}")
-
-	IS_SCREEN_ON="FALSE"
-	if [[ "$ANDROID_MAJOR_VERSION" -le 4 ]];
+	if [ $DEPLOY_TARGET_ID == "\*" ] || [ $DEVICE_ID == $DEPLOY_TARGET_ID ]
 	then
-		if [ "$(adb -s $DEVICE_ID shell dumpsys input_method | grep -oE 'mScreenOn=[a-z]*')" == "mScreenOn=true" ];
+		echo "Try uninstalling $PACKAGE from $DEVICE_ID ..."
+		adb -s $DEVICE_ID uninstall $PACKAGE
+
+		echo "Installing $PACKAGE into $DEVICE_ID ..."
+		adb -s $DEVICE_ID install "$APK"
+		
+		# NOTE(ruel) 3 means 3 is home. some devices restrict const definitions (like KEYCODE_HOME)
+		adb -s $DEVICE_ID shell input keyevent 3
+
+		echo "Launching $PACKAGE of $DEVICE_ID ..."
+		adb -s $DEVICE_ID shell am start -n "$PACKAGE/$MAIN_ACTIVITY"
+
+		# get ips of DEVICE_ID that intersect
+		IP_ADDRS=$(source ./list_android_ip.sh -i $DEVICE_ID)
+
+		if [ -z "$IP_ADDRS" ]
 		then
-		IS_SCREEN_ON="TRUE"
-		fi
-	else
-		if [ "$(adb -s $DEVICE_ID shell dumpsys power | grep -oE "Display Power: state=[A-Z]*")" == "Display Power: state=ON" ];
-		then
-		IS_SCREEN_ON="TRUE"
-		fi
-	fi
+			echo "unable to detect any matched ip to connect unit test servers"
+		else  
+			# try connect to unit test server with each ips
+			LISTEN="FALSE"
+			while [ $LISTEN == "FALSE" ];
+			do	
+				sleep 1
 
-	if [ "$IS_SCREEN_ON" == "FALSE" ];
-	then
-		adb -s $DEVICE_ID shell input keyevent KEYCODE_POWER	
-	fi
+				for IP_ADDR in $IP_ADDRS;
+				do 
+					if [ $LISTEN == "FALSE" ];
+					then 
+						echo "Try Connecting $IP_ADDR:7701"
+						nc -w 2 -v $IP_ADDR 7701 </dev/null; TEST_RESULT=$?;
+						if [ "$TEST_RESULT" -eq 0 ]
+						then
+							LISTEN="TRUE"
+							echo "$IP_ADDR:7701 is reachable. we're going to test."
+							AVAILABLE_IP_ADDR=$IP_ADDR
+						else 
+							echo "$IP_ADDR:7701 is not opened yet..."
+						fi 
+					fi 
+				done 
+			done
 
-	#adb -s $DEVICE_ID shell input keyevent 26 #Pressing the lock button
-	#adb -s $DEVICE_ID shell input keyevent 66 #Pressing Enter
-	adb -s $DEVICE_ID shell input keyevent KEYCODE_HOME
-
-	echo "Try uninstalling $PACKAGE ..."
-	adb -s $DEVICE_ID uninstall $PACKAGE
-
-	echo "Installing $PACKAGE ..."
-	adb -s $DEVICE_ID install "$APK"
-
-	adb -s $DEVICE_ID shell am start -n "$PACKAGE/$MAIN_ACTIVITY"
-
-	LISTEN="FALSE"
-	while [ $LISTEN == "FALSE" ];
-	do	
-		sleep 1
-		LISTENING=$(adb -s $DEVICE_ID shell netstat | grep :7701 | grep -o LISTEN)
-		if [ "$LISTENING" == "LISTEN" ];
-		then
-			LISTEN="TRUE"
-			echo "7701 server is up. invoke the unit test"
-		else
-			echo "7701 server is not launched yet. continue awaiting..."
-		fi
-	done
-
-	for IP_ADDR_INTERSECT in $IP_ADDRS_INTERSECT;
-	do
-		IP_ADDR=$(echo $IP_ADDRS | grep $IP_ADDR_INTERSECT)
-		python client.py -a $IP_ADDR -p 7701
-	done
-	
-	adb -s $DEVICE_ID shell screencap -p $SCREENSHOT_REMOTE_TEMP
-	adb -s $DEVICE_ID pull $SCREENSHOT_REMOTE_TEMP $SCREENSHOT
-	adb -s $DEVICE_ID shell rm $SCREENSHOT_REMOTE_TEMP
-	open $SCREENSHOT
+			if [ -v AVAILABLE_IP_ADDR ];
+			then
+				python client.py -a $AVAILABLE_IP_ADDR -p 7701
+			else 
+				echo "no available ip to unit test"
+			fi
+		fi 
+	fi 
 done
 
 if [ "$VERBOSE" == "TRUE" ];
