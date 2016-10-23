@@ -30,8 +30,8 @@ then
 	exit 1;
 fi
 
-LOCAL_IPS_HEAD=$(ifconfig | grep inet | awk '{print $2}' | grep -Eo '^[0-9\.]{8,16}' | awk '{split($0,a,"."); print a[1]"."a[2]"."a[3]}' | grep -v ^127)
-DEVICE_IP_ADDRS=$(adb -s $DEVICE_ID shell ip addr show | grep inet | awk '{print $2}' | grep -Eo '^[0-9\.]{8,16}' | grep -v ^127)
+LOCAL_IPS_HEAD=$(ifconfig | grep inet | awk '{print $2}' | grep -Eo '^[0-9\.]{8,16}' | awk '{split($0,a,"."); print a[1]"."a[2]"."a[3]}')
+DEVICE_IP_ADDRS=$(adb -s $DEVICE_ID shell ip addr show | grep inet | awk '{print $2}' | grep -Eo '^[0-9\.]{8,16}')
 DEVICE_IP_ADDRS_HEAD=$(echo $DEVICE_IP_ADDRS | awk '{split($0,a,"."); print a[1]"."a[2]"."a[3]}')
 IP_ADDRS_INTERSECT=$(echo $LOCAL_IPS_HEAD $DEVICE_IP_ADDRS_HEAD | tr ' ' '\n' | sort | uniq -d)
 
@@ -47,7 +47,7 @@ do
 	fi
 done
 
-echo $RESULT | tr ' ' '\n'
+echo $RESULT | tr ' ' '\n' | grep -v ^0. | grep -v ^127.
 
 if [ "$VERBOSE" == "TRUE" ];
 then

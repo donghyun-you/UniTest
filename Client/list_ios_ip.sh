@@ -1,7 +1,8 @@
 #!/bin/bash
 
+BUNDLE_ID="com.ruel.unitest"
 # NOTE(ruel): receive argument and organize
-while getopts ":vi:x:" opt; do
+while getopts ":vi:x:b:" opt; do
 	case $opt in
 		:)
 			echo "Usage: -i {device id(ip,usb id} -v(verbose) -x {export path}"
@@ -12,6 +13,9 @@ while getopts ":vi:x:" opt; do
 			;;
 		i)
 			DEVICE_ID=$OPTARG
+			;;
+		b)
+			BUNDLE_ID=$OPTARG
 			;;
 		x)
 			EXPORT=$OPTARG
@@ -43,12 +47,12 @@ fi
 TEMP_FOLDER="/tmp/"$(date +%s)"_"$IOS_APP
 IP_ADDRS_FILE=$TEMP_FOLDER"/Documents/ip_address"
 
-if [ -f $IP_ADDR_FILE ];
+if [ -f $IP_ADDRS_FILE ];
 then 
 	rm $IP_ADDRS_FILE
 fi 
 
-ios-deploy --id $DEVICE_ID --no-wifi --bundle_id com.ruel.unitest --download=/Documents/ip_address --to $TEMP_FOLDER
+ios-deploy --id $DEVICE_ID --no-wifi --bundle_id $BUNDLE_ID --download=/Documents/ip_address --to $TEMP_FOLDER 1>/dev/null
 
 if [ ! -f $IP_ADDRS_FILE ];
 then
@@ -56,14 +60,14 @@ then
 	safe_exit 1
 fi
 
-LOCAL_IPS_HEAD=$(ifconfig | grep inet | awk '{print $2}' | grep -Eo '^[0-9\.]{8,16}' | awk '{split($0,a,"."); print a[1]"."a[2]"."a[3]}' | grep -v ^127)
+LOCAL_IPS_HEAD=$(ifconfig | grep inet | awk '{print $2}' | grep -Eo '^[0-9\.]{8,16}' | awk '{split($0,a,"."); print a[1]"."a[2]"."a[3]}')
 DEVICE_IP_ADDRS=$(cat $IP_ADDRS_FILE)
-DEVICE_IP_ADDRS_HEAD=$(echo $DEVICE_IP_ADDRS | awk '{split($0,a,"."); print a[1]"."a[2]"."a[3]}')
+DEVICE_IP_ADDRS_HEAD=$(echo $DEVICE_IP_ADDRS | tr ' ' '\n' | awk '{split($0,a,"."); print a[1]"."a[2]"."a[3]}')
 IP_ADDRS_INTERSECT=$(echo $LOCAL_IPS_HEAD $DEVICE_IP_ADDRS_HEAD | tr ' ' '\n' | sort | uniq -d)
 
 for IP_ADDR_INTERSECT in $IP_ADDRS_INTERSECT;
 do
-	SCOPE_RESULT=$(echo $DEVICE_IP_ADDRS | grep $IP_ADDR_INTERSECT)
+	SCOPE_RESULT=$(echo $DEVICE_IP_ADDRS | tr ' ' '\n' | grep $IP_ADDR_INTERSECT)
 
 	if [ -v RESULT ];
 	then
@@ -73,6 +77,6 @@ do
 	fi
 done
 
-echo $RESULT | tr ' ' '\n'
+echo $RESULT | tr ' ' '\n' | sort | uniq | grep -v ^0. | grep -v ^127.
 
 safe_exit 0
