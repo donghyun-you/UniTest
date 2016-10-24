@@ -51,6 +51,61 @@ namespace UniTest
 			reports.Add(result);
 		}
 
+		public override string GetTestedSummary(string test_case)
+		{
+			if(TestedMethodReports == null) 
+			{
+				return null;
+			}
+
+			if(test_case == null) 
+			{
+				return null;
+			}
+
+			string summary = "";
+
+			List<TestReport> resultList;
+			if(TestedMethodReports.TryGetValue(test_case,out resultList)) 
+			{
+				foreach(var result in resultList) 
+				{
+					var attachmentSummary = (result.attachments != null ? "\n"+string.Join("\n\n",result.attachments.Where(entry=>entry != null).Select(entry=>">    "+entry.ToString().Replace("\n","\n>    ")).ToArray())+"\n\n" ?? "" : "").Trim();
+
+					switch(result.type) 
+					{
+						case TestReportType.kComment:
+							summary += "[Comment] ";
+						break;
+
+						case TestReportType.kPass:
+							summary += "<color=aqua>[Passed]</color> ";
+						break;
+
+						case TestReportType.kWarning:
+							summary += "<color=yellow>[Warning]</color> ";
+						break;
+					}
+
+					if(string.IsNullOrEmpty(attachmentSummary) == false) 
+					{
+						attachmentSummary = "\n\n"+attachmentSummary;
+					}
+
+					summary += (result.message ?? "")+"<color=red>"+attachmentSummary+"</color>\n\n";
+				}
+			}
+
+			if(string.IsNullOrEmpty(summary)) 
+			{
+				return null;
+			}
+			else 
+			{
+				return summary;
+			}
+		}
+
 		private IDisposable _disposable = null;
 
 		protected override void onDisposed ()
@@ -182,7 +237,7 @@ namespace UniTest
 
 			foreach(TestElement testCase in Children) 
 			{
-				TestLogger.Verbose(this,"running "+this.SelfStory+"->"+testCase.SelfStory);
+				TestLogger.Verbose(this,"<color=aqua>Running</color>> <color=white>"+this.SelfStory+"->"+testCase.SelfStory+"</color>");
 
 				if(this.TestState == TestResultType.kFailed && this.IsIgnoreNextOnFailure) 
 				{
@@ -194,20 +249,32 @@ namespace UniTest
 					bool isComplete = false;
 					testCase.Execute(result=> 
 					{
-						if(result) 
-						{
-							TestLogger.Info(this,"<color=green>\u2714 "+testCase.SelfStory+"</color>");	
-						}
-						else 
-						{
-							TestLogger.Error(this,"<color=red>\u2716 "+testCase.SelfStory+"</color>");
-						}
+						try {
+							
+							var testedSummary = GetTestedSummary(testCase.Name);
+							if(string.IsNullOrEmpty(testedSummary) == false) 
+							{
+								testedSummary = "\n\n"+testedSummary;
+							}
 
-						if(result == false) 
+							if(result) 
+							{
+								TestLogger.Info(this,"<color=green>\u2714 "+testCase.SelfStory+"</color>"+testedSummary);	
+							}
+							else 
+							{
+								TestLogger.Error(this,"<color=red>\u2716 "+testCase.SelfStory+"</color>"+testedSummary);
+							}
+
+							if(result == false) 
+							{
+								this.TestState = TestResultType.kFailed;
+								this.FailedException = testCase.FailedException;
+								on_determined(result);
+							}
+						} catch(Exception ex) 
 						{
-							this.TestState = TestResultType.kFailed;
-							this.FailedException = testCase.FailedException;
-							on_determined(result);
+							Debug.LogError(ex);
 						}
 					},()=>
 					{

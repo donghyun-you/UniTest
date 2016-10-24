@@ -50,6 +50,11 @@ namespace UniTest
 			protected set;
 		}
 
+		public virtual string GetTestedSummary(string test_case) 
+		{
+			return null;
+		}
+
 		public virtual string Story 
 		{
 			get 

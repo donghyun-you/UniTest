@@ -229,7 +229,7 @@ namespace UniTest.Server
 					onStarted();
 				},Debug.LogException);
 
-				TestLogger.Info(this,"start looping");
+				TestLogger.Info(this,"start server looping");
 
 				for(;;) 
 				{
