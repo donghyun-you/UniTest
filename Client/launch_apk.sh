@@ -5,6 +5,7 @@ source ./dependency_android.sh
 # NOTE(ruel): default as usb devices
 VERBOSE="FALSE"
 DEPLOY_TARGET_ID="\*"
+UNIT_TEST_CONNECT_RETRY_COUNT=10
 
 # NOTE(ruel): receive argument and organize
 while getopts ":f:m:p:c:vp:i:" opt; do
@@ -104,6 +105,7 @@ do
 			echo "unable to detect any matched ip to connect unit test servers"
 		else  
 			# try connect to unit test server with each ips
+			i=$UNIT_TEST_CONNECT_RETRY_COUNT # try UNIT_TEST_CONNECT_RETRY_COUNT times for each ip
 			LISTEN="FALSE"
 			while [ $LISTEN == "FALSE" ];
 			do	
@@ -124,7 +126,13 @@ do
 							echo "$IP_ADDR:7701 is not opened yet..."
 						fi 
 					fi 
-				done 
+				done
+
+				if [ $((i--)) -lt 0 ]
+				then 
+					echo "Error: Out of retry count" 1>&2
+					safe_exit 1
+				fi
 			done
 
 			if [ -v AVAILABLE_IP_ADDR ];

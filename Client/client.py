@@ -8,6 +8,8 @@ HOST="127.0.0.1"
 PORT=7701
 BUFFER_SIZE=0xff
 METHOD="RunAllTest" # or RunTestOfType:NameOfType (ex: RunTestOfType:UniTest.Sample.TestBddSuccess) 
+CONNECTION_TIMEOUT=5
+POLL_TIMEOUT=5
 
 for opt,arg in opts:
     if opt == '-h':
@@ -56,6 +58,7 @@ class UniTestClient(asyncore.dispatcher):
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect( (host, port) )
         self.request(message_type, body)
+        self.socket.settimeout(CONNECTION_TIMEOUT)
 
     def handle_connect(self):
         pass
@@ -183,4 +186,4 @@ else:
     stdinArgs=None
 
 client = UniTestClient(HOST,PORT,"STDIN",{"func":stdinFunc,"args":stdinArgs})
-asyncore.loop()
+asyncore.loop(POLL_TIMEOUT)

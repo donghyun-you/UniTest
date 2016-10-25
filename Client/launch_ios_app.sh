@@ -5,6 +5,7 @@ source ./dependency_ios.sh
 # NOTE(ruel): default as usb devices
 VERBOSE="FALSE"
 DEPLOY_TARGET_ID="\*"
+UNIT_TEST_CONNECT_RETRY_COUNT=10
 
 # NOTE(ruel): receive argument and organize
 while getopts ":f:p:vi:" opt; do
@@ -71,16 +72,28 @@ do
 
 		IP_ADDRS_GET_RESULT=1
 
+		i=$UNIT_TEST_CONNECT_RETRY_COUNT # try UNIT_TEST_CONNECT_RETRY_COUNT times for each app launch
 		while [ $IP_ADDRS_GET_RESULT -eq 1 ];
 		do
 			IP_ADDRS=$(source ./list_ios_ip.sh -i $DEVICE_ID -b $BUNDLE_ID ) </dev/null; IP_ADDRS_GET_RESULT=$?
 			sleep 1
+
+			if [ $((i--)) -lt 0 ]
+			then
+				echo "Error: Out of retry count(retrieve ip file)" 1>&2
+				safe_exit 1
+			fi 
+
 		done
+
+		echo "ip detected: $IP_ADDRS"
 
 		if [ -z "$IP_ADDRS" ]
 		then 
 			echo "unable to detect any matched ip to connect unit test servers"
 		else 
+			# try connect to unit test server with each ips
+			i=$UNIT_TEST_CONNECT_RETRY_COUNT # try UNIT_TEST_CONNECT_RETRY_COUNT times for each IP_ADDR
 			LISTEN="FALSE"
 			while [ $LISTEN == "FALSE" ];
 			do	
@@ -101,9 +114,14 @@ do
 			                            	echo "$IP_ADDR:7701 is not opened yet..."
 		                        	fi
 					fi
-
-					
 				done 
+
+				if [ $((i--)) -lt 0 ]
+				then
+					echo "Error: Out of retry count" 1>&2
+					safe_exit 1
+				fi 
+
 			done
 
 			if [ -v AVAILABLE_IP_ADDR ];
