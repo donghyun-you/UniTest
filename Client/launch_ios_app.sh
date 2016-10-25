@@ -68,69 +68,84 @@ do
 		ios-deploy --id $DEVICE_ID --no-wifi --uninstall_only --bundle_id $BUNDLE_ID
 
 		echo "Installing and launching $BUNDLE_ID from $IOS_APP ..."
-		ios-deploy --id $DEVICE_ID --no-wifi --justlaunch --bundle $IOS_APP
+		LAUNCH_RESULT=$(ios-deploy --id $DEVICE_ID --no-wifi --justlaunch --bundle $IOS_APP)
 
-		IP_ADDRS_GET_RESULT=1
+		IFSB=$IFS
+		IFS=$'\n'
+		for LINE in $LAUNCH_RESULT
+		do 
+			echo $LINE
+		done 
+		IFS=$IFSB
 
-		i=$UNIT_TEST_CONNECT_RETRY_COUNT # try UNIT_TEST_CONNECT_RETRY_COUNT times for each app launch
-		while [ $IP_ADDRS_GET_RESULT -eq 1 ];
-		do
-			IP_ADDRS=$(source ./list_ios_ip.sh -i $DEVICE_ID -b $BUNDLE_ID ) </dev/null; IP_ADDRS_GET_RESULT=$?
-			sleep 1
+		if [ ! -z "$(echo $LAUNCH_RESULT | grep -e 'Device Locked')" ]
+		then
+			echo "$DEVICE_ID is device locked. skipping test over wifi"
+		else
+			IP_ADDRS_GET_RESULT=1
 
-			if [ $((i--)) -lt 0 ]
-			then
-				echo "Error: Out of retry count(retrieve ip file)" 1>&2
-				safe_exit 1
-			fi 
-
-		done
-
-		echo "ip detected: $IP_ADDRS"
-
-		if [ -z "$IP_ADDRS" ]
-		then 
-			echo "unable to detect any matched ip to connect unit test servers"
-		else 
-			# try connect to unit test server with each ips
-			i=$UNIT_TEST_CONNECT_RETRY_COUNT # try UNIT_TEST_CONNECT_RETRY_COUNT times for each IP_ADDR
-			LISTEN="FALSE"
-			while [ $LISTEN == "FALSE" ];
-			do	
+			i=$UNIT_TEST_CONNECT_RETRY_COUNT # try UNIT_TEST_CONNECT_RETRY_COUNT times for each app launch
+			while [ $IP_ADDRS_GET_RESULT -eq 1 ];
+			do
+				IP_ADDRS=$(source ./list_ios_ip.sh -i $DEVICE_ID -b $BUNDLE_ID ) </dev/null; IP_ADDRS_GET_RESULT=$?
 				sleep 1
-			
-				for IP_ADDR in $IP_ADDRS;
-				do
-					if [ $LISTEN == "FALSE" ];
-					then
-						echo "Try Connecting $IP_ADDR:7701"
-						nc -w 2 -v $IP_ADDR 7701 </dev/null; TEST_RESULT=$?;
-			                        if [ "$TEST_RESULT" -eq 0 ]
-			                        then
-							LISTEN="TRUE"
-			                        	echo "$IP_ADDR:7701 is reachable. we're going to test."
-							AVAILABLE_IP_ADDR=$IP_ADDR
-			                        else
-			                            	echo "$IP_ADDR:7701 is not opened yet..."
-		                        	fi
-					fi
-				done 
 
 				if [ $((i--)) -lt 0 ]
 				then
-					echo "Error: Out of retry count" 1>&2
+					echo "Error: Out of retry count(retrieve ip file)" 1>&2
 					safe_exit 1
 				fi 
 
 			done
 
-			if [ -v AVAILABLE_IP_ADDR ];
+			echo "ip detected: $IP_ADDRS"
+
+			if [ -z "$IP_ADDRS" ]
 			then 
-				python client.py -a $AVAILABLE_IP_ADDR -p 7701
-			else
-				echo "no available ip to unit test"
-			fi
+				echo "unable to detect any matched ip to connect unit test servers"
+			else 
+				# try connect to unit test server with each ips
+				i=$UNIT_TEST_CONNECT_RETRY_COUNT # try UNIT_TEST_CONNECT_RETRY_COUNT times for each IP_ADDR
+				LISTEN="FALSE"
+				while [ $LISTEN == "FALSE" ];
+				do	
+					sleep 1
+				
+					for IP_ADDR in $IP_ADDRS;
+					do
+						if [ $LISTEN == "FALSE" ];
+						then
+							echo "Try Connecting $IP_ADDR:7701"
+							nc -w 2 -v $IP_ADDR 7701 </dev/null; TEST_RESULT=$?;
+							if [ "$TEST_RESULT" -eq 0 ]
+							then
+								LISTEN="TRUE"
+								echo "$IP_ADDR:7701 is reachable. we're going to test."
+								AVAILABLE_IP_ADDR=$IP_ADDR
+							else
+								echo "$IP_ADDR:7701 is not opened yet..."
+							fi
+						fi
+					done 
+
+					if [ $((i--)) -lt 0 ]
+					then
+						echo "Error: Out of retry count" 1>&2
+						safe_exit 1
+					fi 
+
+				done
+
+				if [ -v AVAILABLE_IP_ADDR ];
+				then 
+					python client.py -a $AVAILABLE_IP_ADDR -p 7701
+				else
+					echo "no available ip to unit test"
+				fi
+			fi 
 		fi 
+
+
 	fi 
 done
 

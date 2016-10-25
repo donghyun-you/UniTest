@@ -46,8 +46,6 @@ fi
 
 ADB_EN_ADDR=$(source ./list_android_wifi_devices.sh | awk '{split($0,a,":"); print a[1]}')
 ADB_USB_DEVICES=$(source ./list_android_usb_devices.sh)
-
-#LOCAL_IPS_HEAD=$(ifconfig | grep inet | awk '{print $2}' | grep -Eo '^[0-9\.]{8,16}' | grep -v ^127 |awk '{split($0,a,"."); print a[1]"."a[2]"."a[3]}')
 DEVICE_IDS=$ADB_USB_DEVICES
 
 # NOTE(ruel): check argument configured
