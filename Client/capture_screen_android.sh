@@ -26,7 +26,7 @@ then
 	set -x;
 fi
 
-if [ ! -v DEVICE_ID ]
+if [ -z "$DEVICE_ID" ]
 then 
 	echo "Error: -i option (DEVICE_ID, ip or adb usb identifier) required" 1>&2
 	safe_exit 1
@@ -35,7 +35,7 @@ fi
 SCREENSHOT=$(echo "/tmp/"$DEVICE_ID".screen.png")
 SCREENSHOT_REMOTE_TEMP=$(echo "/sdcard/"$DEVICE_ID".screen.png")
 
-if [ -v EXPORT ];
+if [ ! -z "$EXPORT" ];
 then 
 	SCREENSHOT=$EXPORT
 fi

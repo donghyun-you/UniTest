@@ -49,7 +49,7 @@ ADB_USB_DEVICES=$(source ./list_android_usb_devices.sh)
 DEVICE_IDS=$ADB_USB_DEVICES
 
 # NOTE(ruel): check argument configured
-if [ ! -v APK ]; 
+if [ -z "$APK" ]; 
 then 
 	echo "Error: -f {APK_PATH} option required" 1>&2
 	safe_exit 1
@@ -71,9 +71,15 @@ then
 	safe_exit 1
 fi 
 
-if [ ! -v MAIN_ACTIVITY ]
+if [ -z "$MAIN_ACTIVITY" ]
 then
 	MAIN_ACTIVITY=$(echo $BUNDLE_ID_ACTIVITIES | tr ' ' '\n' | head -n 1)
+fi
+
+if [ -z "$MAIN_ACTIVITY" ]
+then
+	echo "Error: Unable to detect main activity from $APK"
+	safe_exit 1
 fi 
 
 echo "APK file to install: $APK, Bundle Identifier: $BUNDLE_ID, Activity: $MAIN_ACTIVITY"
@@ -133,7 +139,7 @@ do
 				fi
 			done
 
-			if [ -v AVAILABLE_IP_ADDR ];
+			if [ ! -z "$AVAILABLE_IP_ADDR" ];
 			then
 				python client.py -a $AVAILABLE_IP_ADDR -p 7701
 			else 

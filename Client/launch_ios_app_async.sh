@@ -34,7 +34,7 @@ fi
 DEVICE_IDS=$(ios-deploy --detect | grep -Eo "[a-fA-F0-9]{40}")
 
 # NOTE(ruel): check argument configured
-if [ ! -v IOS_APP ]; 
+if [ -z "$IOS_APP" ]; 
 then 
 	echo "Error: -f {IOS_APP_PATH} option required" 1>&2
 	safe_exit 1
@@ -56,6 +56,18 @@ then
 fi 
 
 echo "iOS App file to install: $IOS_APP, Bundle Identifier: $BUNDLE_ID"
+
+# NOTE(ruel): trapping if script quitted by ctrl+c
+trap ctrl_c INT
+function ctrl_c() {
+
+	echo "\nQuitting by termination ..."
+
+	for PID in $PIDS;
+	do 
+		kill -15 $PID
+	done 
+}
 
 
 set -o monitor

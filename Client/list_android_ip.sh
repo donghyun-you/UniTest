@@ -26,7 +26,7 @@ then
 	set -x;
 fi
 
-if [ ! -v DEVICE_ID ]
+if [ -z "$DEVICE_ID" ]
 then 
 	echo "Error: -i option (DEVICE_ID, ip or adb usb identifier) required" 1>&2
 	safe_exit 1
@@ -41,7 +41,7 @@ for IP_ADDR_INTERSECT in $IP_ADDRS_INTERSECT;
 do
 	SCOPE_RESULT=$(echo $DEVICE_IP_ADDRS | grep $IP_ADDR_INTERSECT)
 
-	if [ -v RESULT ];
+	if [ ! -z "$RESULT" ];
 	then
 		RESULT=$RESULT" "$SCOPE_RESULT
 	else

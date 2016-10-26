@@ -37,13 +37,13 @@ fi
 DEVICE_IDS=$(ios-deploy --detect | grep -Eo "[a-fA-F0-9]{40}")
 
 # NOTE(ruel): check argument configured
-if [ ! -v IOS_APP ]; 
+if [ -z "$IOS_APP" ]; 
 then 
 	echo "Error: -f {IOS_APP_PATH} option required" 1>&2
 	safe_exit 1
 fi
 
-# NOTE(ruel): check file exists
+# NOTE(ruel): check directory exists
 if [ ! -d $IOS_APP ];
 then	
 	echo $IOS_APP" is not exists!" 1>&2
@@ -136,7 +136,7 @@ do
 
 				done
 
-				if [ -v AVAILABLE_IP_ADDR ];
+				if [ ! -z "$AVAILABLE_IP_ADDR" ];
 				then 
 					python client.py -a $AVAILABLE_IP_ADDR -p 7701
 				else
