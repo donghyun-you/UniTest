@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 
-import asyncore, socket, json, sys, getopt
+#import asyncore, socket, json, sys, getopt
+import json, sys, getopt
+from twisted.internet import reactor, protocol
 
-opts, args = getopt.getopt(sys.argv[1:],"ha:p:m:",["address=","port=","method="])
+opts, args = getopt.getopt(sys.argv[1:],"ha:p:m:v:",["address=","port=","method=","argv="])
 
 HOST="127.0.0.1"
 PORT=7701
 BUFFER_SIZE=0xff
 METHOD="RunAllTest" # or RunTestOfType:NameOfType (ex: RunTestOfType:UniTest.Sample.TestBddSuccess) 
-CONNECTION_TIMEOUT=5
 POLL_TIMEOUT=5
+ARGV=None
+EXITCODE=0
 
 for opt,arg in opts:
     if opt == '-h':
@@ -20,12 +23,14 @@ for opt,arg in opts:
     elif opt in ("-p","--port"):
         PORT=int(arg)
     elif opt in ("-m","--method"):
-        METHOD="RunTestOfType:"+arg
+        METHOD=arg
+    elif opt in ("-v","--argv"):
+        ARGV=arg
 
-print "address: "+HOST
-print "port: "+str(PORT)
-print "method: "+METHOD
-
+print "UniTest Application Server Address: "+HOST
+print "UniTest Application Server Port: "+str(PORT)
+print "Test Method: "+METHOD
+print "Test argv for method: "+str(ARGV)
 COLORMAP={
         '<color=red>'       : '\033[1;31m',
         '<color=green>'     : '\033[1;32m',
@@ -41,7 +46,7 @@ COLORMAP={
         '</color>'          : '\033[0m'
          }
 
-class UniTestClient(asyncore.dispatcher):
+class UniTestClient(protocol.Protocol):
 
     recvBuffer=None
     response=None
@@ -53,33 +58,22 @@ class UniTestClient(asyncore.dispatcher):
         isReadingBodyComplete=False
         body=None
 
-    def __init__(self, host, port, message_type, body):
-        asyncore.dispatcher.__init__(self)
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connect( (host, port) )
-        self.request(message_type, body)
-        self.socket.settimeout(CONNECTION_TIMEOUT)
+    requestMessageType="STDIN"
+    requestBody={"func":METHOD, "args":ARGV}
 
-    def handle_connect(self):
+    def connectionMade(self):
+        self.request(self.requestMessageType, self.requestBody)
+
+    def connectionLost(self, reason):
         pass
 
-    def handle_close(self):
-        print "closing"
-        self.close()
+    def dataReceived(self, data):
+        self.consume_receive_packet(data)
 
-    def handle_read(self):
-        self.consume_receive_packet(self.recv(BUFFER_SIZE))
-
-    def writable(self):
-        return (len(self.buffer) > 0)
-
-    def handle_write(self):
-        sent = self.send(self.buffer)
-        self.buffer = self.buffer[sent:]
-
-    def request(self,message_type, body):
+    def request(self, message_type, body):
         bodyBuffer = json.dumps(body);
-        self.buffer = 'Length: '+str(len(bodyBuffer))+'\n'+'MessageType: '+message_type+'\n\n'+bodyBuffer
+        message = 'Length: '+str(len(bodyBuffer))+'\n'+'MessageType: '+message_type+'\n\n'+bodyBuffer
+        self.transport.write(message)
 
     def consume_receive_packet(self,received_buffer):
 
@@ -152,8 +146,12 @@ class UniTestClient(asyncore.dispatcher):
                     self.unset_processing_message()
                     
     def receive_message(self,message_type,body):
+        global EXITCODE
+
         #print "Verbose> receiving message"
         #print "MessageType: "+message_type
+        #print "Body/"
+        #print body
         if(message_type == "STDOUT"):
             sys.stdout.write(self.replace_color_tags(body))
             sys.stdout.write("\n")
@@ -163,9 +161,9 @@ class UniTestClient(asyncore.dispatcher):
             sys.stderr.write("\n")
 
         elif(message_type == "EXIT"):
-
             #print "Verbose> exiting by server signal: "+str(body)
-            sys.exit(int(body))
+            EXITCODE=int(body)
+            reactor.stop()
 
         else:
             print message_type
@@ -181,15 +179,26 @@ class UniTestClient(asyncore.dispatcher):
         self.recvBuffer = None
         self.response = None
 
-parsedMethod=METHOD.split(':')
-print parsedMethod
-if len(parsedMethod) >= 2:
-    stdinFunc=parsedMethod[0]
-    stdinArgs=parsedMethod[1]
-else:
-    stdinFunc=parsedMethod[0]
-    stdinArgs=None
+class UniTestClientFactory(protocol.ClientFactory):
+    protocol = UniTestClient
 
-client = UniTestClient(HOST,PORT,"STDIN",{"func":stdinFunc,"args":stdinArgs})
+    def clientConnectionFailed(self, connector, reason):
+        print "Connection failed"
+        if reactor.running:
+            reactor.stop()
 
-asyncore.loop(POLL_TIMEOUT)
+    def clientConnectionLost(self, connector, reason):
+        print "Connection lost"
+        
+        if reactor.running:
+            reactor.stop()
+
+def main():
+    factory = UniTestClientFactory()
+    reactor.connectTCP(HOST, PORT, factory)
+    reactor.run()
+    print "Exiting with: "+str(EXITCODE)
+    sys.exit(EXITCODE)
+
+if __name__ == '__main__':
+    main()

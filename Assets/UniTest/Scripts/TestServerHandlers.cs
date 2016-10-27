@@ -107,6 +107,7 @@ namespace UniTest.Server
 			if(_isTestRunning) 
 			{
 				sender.SendError("[UniTest/Error]: Test is already invoked and running. ignoring your request");
+				sender.SendExit("1");
 			}
 			else 
 			{
@@ -128,6 +129,7 @@ namespace UniTest.Server
 					_senders.Remove(sender);
 					_server.CloseClient(sender);
 					_isTestRunning = false;
+					Debug.Log("[UniTest/Info] Test completed");
 				});
 			}
 		}
@@ -139,6 +141,7 @@ namespace UniTest.Server
 			if(_isTestRunning) 
 			{
 				sender.SendError("[UniTest/Error]: Test is already invoked and running. ignoring your request");
+				sender.SendExit("1");
 			}
 			else 
 			{
@@ -159,6 +162,7 @@ namespace UniTest.Server
 					_senders.Remove(sender);
 					_server.CloseClient(sender);
 					_isTestRunning = false;
+					Debug.Log("[UniTest/Info] Test completed");
 				});
 			}
 		}
