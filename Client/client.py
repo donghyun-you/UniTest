@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 #import asyncore, socket, json, sys, getopt
-import json, sys, getopt
-from twisted.internet import reactor, protocol
+import json, sys, getopt, time
+from twisted.internet import reactor, protocol, task
 
 opts, args = getopt.getopt(sys.argv[1:],"ha:p:m:v:",["address=","port=","method=","argv="])
 
@@ -13,6 +13,7 @@ METHOD="RunAllTest" # or RunTestOfType:NameOfType (ex: RunTestOfType:UniTest.Sam
 POLL_TIMEOUT=5
 ARGV=None
 EXITCODE=0
+VARIABLE_TIMEOUT=30
 
 for opt,arg in opts:
     if opt == '-h':
@@ -48,8 +49,12 @@ COLORMAP={
 
 class UniTestClient(protocol.Protocol):
 
-    recvBuffer=None
-    response=None
+    recvBuffer          = None
+    response            = None
+    requestMessageType  = "STDIN"
+    requestBody         = {"func":METHOD, "args":ARGV}
+    lastUpdatedTime     = time.time()
+    isConnected         = False
 
     class Response():
         length=-1
@@ -58,17 +63,38 @@ class UniTestClient(protocol.Protocol):
         isReadingBodyComplete=False
         body=None
 
-    requestMessageType="STDIN"
-    requestBody={"func":METHOD, "args":ARGV}
+    def __init__(self):
+        self.updateCall = task.LoopingCall(self.update)
+        self.updateCall.start(1)
 
     def connectionMade(self):
+        self.isConnected=True
         self.request(self.requestMessageType, self.requestBody)
 
+
     def connectionLost(self, reason):
-        pass
+        self.isConnected=False
+        if self.updateCall.running:
+            self.updateCall.stop()
 
     def dataReceived(self, data):
+        self.lastUpdatedTime = time.time()
         self.consume_receive_packet(data)
+
+    def updatedDeltaTime(self):
+        return time.time() - self.lastUpdatedTime;
+
+    def update(self):
+
+        if self.updatedDeltaTime() > VARIABLE_TIMEOUT:
+
+            if self.isConnected:
+                print "variable timed out!"
+            else:
+                print "connection timed out!"
+
+            EXITCODE=1
+            reactor.stop()
 
     def request(self, message_type, body):
         bodyBuffer = json.dumps(body);
