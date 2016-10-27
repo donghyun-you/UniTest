@@ -2,12 +2,12 @@
 
 source ./dependency_android.sh
 
-# NOTE(ruel): default as usb devices
+# NOTE(donghyun-you): default as usb devices
 VERBOSE="FALSE"
 DEPLOY_TARGET_ID="\*"
 UNIT_TEST_CONNECT_RETRY_COUNT=10
 
-# NOTE(ruel): receive argument and organize
+# NOTE(donghyun-you): receive argument and organize
 while getopts ":f:m:p:c:vp:i:" opt; do
 	case $opt in
 		:)
@@ -48,14 +48,14 @@ ADB_EN_ADDR=$(source ./list_android_wifi_devices.sh | awk '{split($0,a,":"); pri
 ADB_USB_DEVICES=$(source ./list_android_usb_devices.sh)
 DEVICE_IDS=$ADB_USB_DEVICES
 
-# NOTE(ruel): check argument configured
+# NOTE(donghyun-you): check argument configured
 if [ -z "$APK" ]; 
 then 
 	echo "Error: -f {APK_PATH} option required" 1>&2
 	safe_exit 1
 fi
 
-# NOTE(ruel): check file exists
+# NOTE(donghyun-you): check file exists
 if [ ! -f $APK ];
 then	
 	echo "Error: "$APK" is not exists!" 1>&2
@@ -84,6 +84,8 @@ fi
 
 echo "APK file to install: $APK, Bundle Identifier: $BUNDLE_ID, Activity: $MAIN_ACTIVITY"
 
+UNIT_TEST_RESULT=0
+
 for DEVICE_ID in $DEVICE_IDS;
 do
 
@@ -95,7 +97,7 @@ do
 		echo "Installing $BUNDLE_ID into $DEVICE_ID ..."
 		adb -s $DEVICE_ID install "$APK"
 		
-		# NOTE(ruel) 3 means 3 is home. some devices restrict const definitions (like KEYCODE_HOME)
+		# NOTE(donghyun-you) 3 means 3 is home. some devices restrict const definitions (like KEYCODE_HOME)
 		adb -s $DEVICE_ID shell input keyevent 3
 
 		echo "Launching $BUNDLE_ID of $DEVICE_ID ..."
@@ -141,12 +143,18 @@ do
 
 			if [ ! -z "$AVAILABLE_IP_ADDR" ];
 			then
-				python client.py -a $AVAILABLE_IP_ADDR -p 7701
+				python client.py -a $AVAILABLE_IP_ADDR -p 7701; PARTIAL_UNIT_TEST_RESULT=$?
+
+				if [ $PARTIAL_UNIT_TEST_RESULT -eq 1 ]
+				then 
+					UNIT_TEST_RESULT=1
+				fi
 			else 
-				echo "no available ip to unit test"
+				echo "no available ip to unit test" 1>&2
+				safe_exit 1
 			fi
 		fi 
 	fi 
 done
 
-safe_exit 0
+safe_exit $UNIT_TEST_RESULT

@@ -33,6 +33,7 @@ namespace UniTest.Server
 			STDIN,
 			STDOUT,
 			STDERR,
+			EXIT,
 		}
 
 		public class ClientConnection : IDisposable
@@ -69,7 +70,7 @@ namespace UniTest.Server
 
 			public void Send(MessageType message_type,string data) 
 			{
-				//TestLogger.Info(this,"Sending("+message_type+"): "+data);
+				Debug.Log("Sending("+message_type+"): "+data);
 				if(data == null) 
 				{
 					throw new ArgumentNullException("data");
@@ -94,6 +95,11 @@ namespace UniTest.Server
 			public void SendError(string message) 
 			{
 				this.Send(TestServer.MessageType.STDERR,message);
+			}
+
+			public void SendExit(string message) 
+			{
+				this.Send(TestServer.MessageType.EXIT,message);
 			}
 
 			public void Dispose() 

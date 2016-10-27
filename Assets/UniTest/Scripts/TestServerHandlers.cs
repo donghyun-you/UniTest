@@ -120,7 +120,10 @@ namespace UniTest.Server
 				_senders.Add(sender);
 
 				tester.Run(result=>{
-					TestLogger.Info(this,"test done: "+result);
+					TestLogger.Info(this,"Test result: "+result);
+
+					// NOTE(donghyun-you): equivalent with standard stream "exit"
+					sender.SendExit(result ? "0" : "1");
 				},()=>{
 					_senders.Remove(sender);
 					_server.CloseClient(sender);
@@ -148,7 +151,10 @@ namespace UniTest.Server
 				_senders.Add(sender);
 
 				tester.Run(result=>{
-					TestLogger.Info(this,"test done: "+result);
+					TestLogger.Info(this,"Test result: "+result);
+
+					// NOTE(donghyun-you): equivalent with standard stream "exit"
+					sender.SendExit(result ? "0" : "1");
 				},()=>{
 					_senders.Remove(sender);
 					_server.CloseClient(sender);

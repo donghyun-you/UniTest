@@ -162,6 +162,11 @@ class UniTestClient(asyncore.dispatcher):
             sys.stderr.write(self.replace_color_tags(body))
             sys.stderr.write("\n")
 
+        elif(message_type == "EXIT"):
+
+            #print "Verbose> exiting by server signal: "+str(body)
+            sys.exit(int(body))
+
         else:
             print message_type
             print body
@@ -186,4 +191,5 @@ else:
     stdinArgs=None
 
 client = UniTestClient(HOST,PORT,"STDIN",{"func":stdinFunc,"args":stdinArgs})
+
 asyncore.loop(POLL_TIMEOUT)
