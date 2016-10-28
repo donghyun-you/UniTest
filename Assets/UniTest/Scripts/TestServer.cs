@@ -143,11 +143,6 @@ namespace UniTest.Server
 							_client.GetStream().BeginRead(_buffer, 0, BUFFER_SIZE, new AsyncCallback(receiver), null);
 						}
 					}
-					else 
-					{
-						// message receiving failed. close the connection
-						//_server.CloseClient(this);
-					}
 				} 
 				catch(Exception ex) 
 				{
