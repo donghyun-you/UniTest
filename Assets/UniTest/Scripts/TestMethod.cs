@@ -90,6 +90,7 @@ namespace UniTest
 				{
 					this.TestState 			= TestResultType.kFailed;
 					this.FailedException 	= ex;
+					TestLogger.Exception(this,ex);
 					on_finished(false);
 					on_complete();	
 				});

@@ -120,16 +120,19 @@ namespace UniTest.Server
 
 				_senders.Add(sender);
 
+				bool c_result = false;
+
 				tester.Run(result=>{
 					TestLogger.Info(this,"Test result: "+result);
-
-					// NOTE(donghyun-you): equivalent with standard stream "exit"
-					sender.SendExit(result ? "0" : "1");
+					c_result = result;
 				},()=>{
 					_senders.Remove(sender);
 					_server.CloseClient(sender);
 					_isTestRunning = false;
 					Debug.Log("[UniTest/Info] Test completed");
+
+					// NOTE(donghyun-you): equivalent with standard stream "exit"
+					sender.SendExit(c_result ? "0" : "1");
 				});
 			}
 		}
@@ -153,16 +156,19 @@ namespace UniTest.Server
 
 				_senders.Add(sender);
 
+				bool c_result = false;
+
 				tester.Run(result=>{
 					TestLogger.Info(this,"Test result: "+result);
-
-					// NOTE(donghyun-you): equivalent with standard stream "exit"
-					sender.SendExit(result ? "0" : "1");
+					c_result = result;
 				},()=>{
 					_senders.Remove(sender);
 					_server.CloseClient(sender);
 					_isTestRunning = false;
 					Debug.Log("[UniTest/Info] Test completed");
+
+					// NOTE(donghyun-you): equivalent with standard stream "exit"
+					sender.SendExit(c_result ? "0" : "1");
 				});
 			}
 		}
@@ -209,7 +215,7 @@ namespace UniTest.Server
 				}
 				else 
 				{
-					sender.SendError("[UniTest/"+invoker+"/Exception]: "+ex.Message+"\n"+ex.StackTrace);
+					sender.SendError("<color=purple>[UniTest/"+invoker+"/Exception]: "+ex.Message+"\n"+ex.StackTrace+"</color>");
 				}
 			}
 

@@ -146,7 +146,7 @@ namespace UniTest.Server
 					else 
 					{
 						// message receiving failed. close the connection
-						_server.CloseClient(this);
+						//_server.CloseClient(this);
 					}
 				} 
 				catch(Exception ex) 
