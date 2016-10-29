@@ -127,7 +127,6 @@ namespace UniTest.Server
 					c_result = result;
 				},()=>{
 					_senders.Remove(sender);
-					_server.CloseClient(sender);
 					_isTestRunning = false;
 					Debug.Log("[UniTest/Info] Test completed");
 
@@ -163,7 +162,6 @@ namespace UniTest.Server
 					c_result = result;
 				},()=>{
 					_senders.Remove(sender);
-					_server.CloseClient(sender);
 					_isTestRunning = false;
 					Debug.Log("[UniTest/Info] Test completed");
 
