@@ -11,13 +11,11 @@ namespace UniTest.Server
 		: IDisposable
 	{
 		#region internal
-		private TestServer _server = null;
 		private bool _isDisposed = false;
 		public IDisposable disposable = null;
 
 		public TestServerHandlers(TestServer server) 
 		{
-			_server = server;
 			disposable = BindPackets(server);	
 			TestLogger.OnLogged += onLogReceived;
 			TestLogger.OnExceptionLogged += onExceptionReceived;

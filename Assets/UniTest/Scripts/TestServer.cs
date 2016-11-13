@@ -47,7 +47,6 @@ namespace UniTest.Server
 
 			private const int BUFFER_SIZE = 0xff;
 			private TcpClient _client;
-			private TestServer _server;
 			private byte[] _buffer = new byte[BUFFER_SIZE];
 			private bool _isDisposed = false;
 			public bool IsDisposed 
@@ -60,10 +59,9 @@ namespace UniTest.Server
 
 			public event LineReceive onLineReceived;
 
-			public ClientConnection(TestServer server,TcpClient client) 
+			public ClientConnection(TcpClient client) 
 			{
 				_client = client;	
-				_server = server;
 				_client.GetStream().BeginRead(_buffer, 0, BUFFER_SIZE, new AsyncCallback(receiver), null);
 				InstanceId = s_increment++;
 			}
@@ -234,7 +232,7 @@ namespace UniTest.Server
 
 				for(;;) 
 				{
-					var connection = new ClientConnection(this,_listener.AcceptTcpClient());
+					var connection = new ClientConnection(_listener.AcceptTcpClient());
 					connection.onLineReceived += OnLineReceived;
 					_connections.Add(connection);
 					TestLogger.Info(this,"new connection found: ");
