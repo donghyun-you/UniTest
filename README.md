@@ -1,5 +1,8 @@
 #UniTest
 
+**This project is no longer maintaned. Unity3D implements Unity Test Runner as same purpose. and it works enough**
+https://docs.unity3d.com/Manual/testing-editortestsrunner.html
+
 **Simple Unit Test Framework** for Unity3D.
 
 Coroutine support for asynchronous test.
